@@ -10,4 +10,5 @@ router.register(r'riegos', RiegoViewSet, basename='riegos')
 urlpatterns = [
     path('auth/register/', RegisterView.as_view(), name='register'),
     path('', include(router.urls)),
+
 ]
