@@ -4,8 +4,6 @@ from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 #from django.http import HttpResponse
 from plantas.views import home
-from plantas.views import index_view
-
 
 # def home(request):
 #     return HttpResponse("Bienvenido a la API de Riego Indoor")

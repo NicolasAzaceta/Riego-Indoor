@@ -22,6 +22,9 @@ def home(request):
 def index_view(request):
     return render(request, 'index.html')
 
+def add_view(request):
+    return render(request, 'add-plants.html')
+
 # -------- Registro de usuarios --------
 from rest_framework.views import APIView
 
