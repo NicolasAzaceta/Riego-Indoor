@@ -5,14 +5,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.location.href = "home/"; // Redirigir al login
     return;
   }
-  // try {
-  //   const plantas = await getPlantas(token);
-  //   const container = document.getElementById("plant-list");
-
-  //   if (!plantas.length) {
-  //     container.innerHTML = "<p>No hay plantas registradas.</p>";
-  //     return;
-  //   }
   try {
     const res = await fetch("/api/plantas/", {
       headers: {
@@ -31,7 +23,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-
     plantas.forEach((planta) => {
       const card = document.createElement("div");
       card.className = "col-md-4 mb-3";
@@ -39,8 +30,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       card.innerHTML = `
         <div class="card h-100 shadow-sm">
           <div class="card-body">
-            <h5 class="card-title">${planta.nombre}</h5>
-            <p class="card-text">🌱 Riego en <strong>${planta.dias_para_riego}</strong> días</p>
+            <h5 class="card-title">${planta.nombre_personalizado}</h5>
+            <p class="card-text">🌱 Riego en <strong>${planta.estado_riego}</strong> días</p>
             <a href="detail.html?id=${planta.id}" class="btn btn-outline-success">Ver detalle</a>
           </div>
         </div>
