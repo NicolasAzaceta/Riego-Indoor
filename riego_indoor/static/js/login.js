@@ -53,23 +53,7 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
     const { access } = await loginUsuario(username, password);
     localStorage.setItem("token", access); // Guarda el token para usarlo después
     alert("Login exitoso");
-    window.location.href = "index.html"; // Redirige a la página principal
-  } catch (err) {
-    alert("Usuario o contraseña incorrectos");
-    console.error(err);
-  }
-});
-
-document.getElementById("login-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
-
-  try {
-    const { access } = await loginUsuario(username, password);
-    localStorage.setItem("token", access);
-    alert("Login exitoso");
-    window.location.href = "index.html";
+    window.location.href = "/home/dashboard/"; // Redirige a la página principal
   } catch (err) {
     alert("Usuario o contraseña incorrectos");
     console.error(err);
