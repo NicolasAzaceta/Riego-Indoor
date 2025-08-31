@@ -4,6 +4,7 @@ from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 #from django.http import HttpResponse
 from plantas.views import home
+from plantas.views import index_view
 
 
 # def home(request):
@@ -13,9 +14,12 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     
     path('home/', home, name='home'),
+    #path('', home, name='home'),
+    #path('home/dashboard/', index_view, name='dashboard'),
     
       # API principal
     path('api/', include('plantas.urls')),
+    path('home/', include('plantas.urls')),
 
     # JWT
     path('api/auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),

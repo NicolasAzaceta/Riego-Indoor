@@ -91,6 +91,6 @@ async function obtenerTokenValido() {
     return getToken();
   } catch (err) {
     alert("Sesión expirada. Por favor, iniciá sesión nuevamente.");
-    window.location.href = "login.html";
+    window.location.href = "/home/"; // Redirige al login
   }
 }

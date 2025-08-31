@@ -12,9 +12,15 @@ from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import login, authenticate
+
 
 def home(request):
     return render(request, 'login.html')
+
+def index_view(request):
+    return render(request, 'index.html')
 
 # -------- Registro de usuarios --------
 from rest_framework.views import APIView
