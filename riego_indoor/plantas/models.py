@@ -5,13 +5,13 @@ from datetime import timedelta, date
 
 class Planta(models.Model):
     TIPO_PLANTA_CHOICES = [
-        ('auto', 'Autofloreciente'),
-        ('foto', 'Fotoperiódica'),
+        ('Auto', 'Autofloreciente',),
+        ('Foto', 'Fotoperiódica'),
     ]
     TAMANO_CHOICES = [
-        ('pequeña', 'Pequeña'),
-        ('mediana', 'Mediana'),
-        ('grande', 'Grande'),
+        ('Pequeña', 'Pequeña'),
+        ('Mediana', 'Mediana'),
+        ('Grande', 'Grande'),
     ]
 
     usuario = models.ForeignKey(User, on_delete=models.CASCADE)

@@ -1,8 +1,25 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const form = document.querySelector("#form-agregar-planta");
+  console.log("✅ add.js cargado");
+  const form = document.getElementById("form-agregar-planta");
+  if (form) {
+    console.log("✅ Formulario seleccionado");
+  } else {
+    console.warn("⚠️ No se encontró el formulario");
+  };
 
-  form.addEventListener("submit", async (e) => {
+  form.addEventListener("submit", async function (e) {
     e.preventDefault();
+    console.log("✅ Listener activo, preventDefault ejecutado");
+    // Aquí va tu lógica de envío por fetch
+
+// document.addEventListener("DOMContentLoaded", () => {
+
+//   const form = document.querySelector("#form-agregar-planta");
+
+//   form.addEventListener("submit", async (e) => {
+//     e.preventDefault();
+    
+
 
     const nombre = document.querySelector("#nombre").value.trim();
     const tipo = document.querySelector("#tipo").value.trim();
@@ -38,9 +55,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (!res.ok) throw new Error("Error al guardar la planta");
 
-      // Feedback visual y redirección
+      // Feedback visual y redirección 
       alert("🌱 Planta guardada con éxito");
-      window.location.href = "home/dashboard/";
+       window.location.href = "/home/add/";
+
     } catch (err) {
       console.error(err);
       alert("Hubo un problema al agregar la planta. Revisá los datos e intentá de nuevo.");

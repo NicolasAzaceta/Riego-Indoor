@@ -20,8 +20,8 @@
         <label for="tipo" class="form-label">Tipo</label>
         <select class="form-select" id="tipo" type="text" required>
           <option value="">Seleccionar</option>
-          <option value="Pequeña">Auto</option>
-          <option value="Mediana">Foto</option>
+          <option value="Auto">Autofloreciente</option>
+          <option value="Foto">Fotoperiódica</option>
         </select>
       </div>
       <div class="mb-3">
@@ -36,7 +36,7 @@
 
       <div class="mb-3">
       <label for="maceta" class="form-label">Tamaño de la maceta en litros</label>
-      <input type="text" class="form-control" id="maceta" name="maceta" placeholder="Ej: 5" required/>
+      <input type="number" class="form-control" id="maceta" name="maceta" placeholder="Ej: 5" required/>
       </div>
 
       
@@ -52,12 +52,8 @@
     </form>
   </div>
   {% load static %}
-  <script src="{% static 'js/api.js' %}"></script>
-  {% load static %}
-  <script src="{% static 'js/add.js' %}"></script>
+  <script src="{% static 'js/api.js' %}" ></script>
+  <script src="{% static 'js/add.js' %}" defer></script>
 </body>
 </html>
 
-<div class="mb-3">
-        <label><input type="checkbox" id="en_floracion" />¿Está en floración?</label>
-      </div>
