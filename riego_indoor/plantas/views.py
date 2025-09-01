@@ -25,6 +25,9 @@ def index_view(request):
 def add_view(request):
     return render(request, 'add-plants.html')
 
+def detail_view(request):
+    return render(request, 'detail.html')
+
 # -------- Registro de usuarios --------
 from rest_framework.views import APIView
 
