@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import PlantaViewSet, RiegoViewSet, RegisterView, index_view, add_view #UsuarioViewSet
+from .views import PlantaViewSet, RiegoViewSet, RegisterView, index_view, add_view, detail_view #UsuarioViewSet
 from django.views.generic import TemplateView
 from django.contrib.auth.views import LoginView
 from . import views
@@ -19,6 +19,5 @@ urlpatterns = [
     # Asegurate de tener el template login.html en la carpeta templates y la configuración correcta en settings.py
     path('dashboard/', index_view, name='dashboard'),
     path('add/', add_view, name='add'),
-
-
+    path('detail/', detail_view, name='detail'),
 ]

@@ -31,8 +31,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         <div class="card h-100 shadow-sm">
           <div class="card-body">
             <h5 class="card-title">${planta.nombre_personalizado}</h5>
-            <p class="card-text">🌱 Riego en <strong>${planta.estado_riego}</strong> días</p>
-            <a href="detail.html?id=${planta.id}" class="btn btn-outline-success">Ver detalle</a>
+            <p class="card-text">🌱 Riego en <strong>${planta.estado_riego}</strong> días</p> 
+            <a href="/home/detail/?id=${planta.id}" class="btn btn-outline-success">Ver detalle</a>
           </div>
         </div>
       `;
