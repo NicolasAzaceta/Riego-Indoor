@@ -1,5 +1,6 @@
 const params = new URLSearchParams(window.location.search);
 const plantId = params.get("id");
+let planta = null;
 
 function renderizarDetalle(planta) {
   document.getElementById("nombre").textContent = planta.nombre_personalizado;
@@ -17,6 +18,7 @@ function renderizarDetalle(planta) {
 }
 
 
+
 function configurarBotonVolver(idBoton, destino) {
   const boton = document.getElementById(idBoton);
   if (boton) {
@@ -25,6 +27,8 @@ function configurarBotonVolver(idBoton, destino) {
 }
 
 configurarBotonVolver("Volver", "/home/dashboard/");
+
+
 
 document.addEventListener("DOMContentLoaded", async () => {
   const id = params.get("id");
@@ -49,7 +53,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (!res.ok) throw new Error("Error al obtener los datos de la planta");
 
-    const planta = await res.json();
+    planta = await res.json();
     console.log("🌱 Detalle de planta:", planta);
 
     renderizarDetalle(planta); // función que actualiza el DOM con los datos
@@ -60,49 +64,145 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 
-// fetch(`/api/plants/${plantId}`, {
-//   headers: {
-//     Authorization: `Bearer ${localStorage.getItem("token")}`
-//   }
-// })
-//   .then(res => res.json())
-//   .then(data => {
-//     document.getElementById("plant-title").textContent = data.name;
-//     document.getElementById("plant-details").innerHTML = `
-//       <li class="list-group-item">Tipo: ${data.type}</li>
-//       <li class="list-group-item">Último riego: ${data.last_watered}</li>
-//     `;
-//   })
-//   .catch(err => {
-//     console.error("Error al cargar la planta:", err);
-//     document.getElementById("plant-title").textContent = "Error al cargar la planta";
-//   });
 
-// document.addEventListener("DOMContentLoaded", async () => {
-//   const token = localStorage.getItem("token");
-//   const params = new URLSearchParams(window.location.search);
-//   const id = params.get("id");
+function mostrarToast(mensaje) {
+  const toast = document.createElement("div");
+  toast.textContent = mensaje;
+  toast.className = "toast-mensaje"; // Asegurate de tener estilos CSS para esto
+  document.body.appendChild(toast);
 
-//   try {
-//     const planta = await getPlantaById(id, token);
-//     document.getElementById("plant-title").textContent = planta.nombre;
+  setTimeout(() => {
+    toast.remove();
+  }, 3000);
+}
 
-//     const detalles = [
-//       { label: "Tipo", value: planta.tipo },
-//       { label: "Tamaño", value: planta.tamano },
-//       { label: "Último riego", value: planta.ultimo_riego },
-//       { label: "Riego en", value: `${planta.dias_para_riego} días` },
-//     ];
 
-//     const list = document.getElementById("plant-details");
-//     detalles.forEach((item) => {
-//       const li = document.createElement("li");
-//       li.className = "list-group-item";
-//       li.textContent = `${item.label}: ${item.value}`;
-//       list.appendChild(li);
-//     });
-//   } catch (err) {
-//     alert("No se pudo cargar el detalle");
-//     console.error(err);
-//   }
-// });
+
+function habilitarEdicion(campo) {
+  document.getElementById("guardarCambios").classList.remove("d-none");
+
+  const span = document.getElementById(campo);
+  const input = document.getElementById(`input-${campo}`);
+  const boton = event.currentTarget; // Captura el botón que disparó el evento
+
+  if (!span || !input || !boton) {
+    console.warn(`Elemento no encontrado para campo: ${campo}`);
+    return;
+  }
+
+  input.value = span.textContent.trim();
+  span.classList.add('d-none');
+  input.classList.remove('d-none');
+  boton.classList.add('d-none'); // Oculta el botón de edición
+}
+
+function obtenerIdDesdeURL() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("id");
+}
+
+
+document.getElementById('guardarCambios').addEventListener('click', async () => {
+  const idPlanta = obtenerIdDesdeURL();
+
+  const camposMap = {
+   nombre: "nombre_personalizado",
+   tipo: "tipo_planta",
+   tamano: "tamano_planta",
+   maceta: "tamano_maceta_litros",
+   ultimoRiego: "fecha_ultimo_riego",
+   enFloracion: "en_floracion",
+   estadoRiego: "estado_texto",
+   sugerencia: "sugerencia_suplementos",
+   recomendado: "recommended_water_ml",
+   frecuencia: "frequency_days",
+   proximoRiego: "next_watering_date",
+   diasRestantes: "days_left"
+   };
+
+// const payload = {};
+const payload = { ...planta }; // copia todos los datos originales
+
+Object.entries(camposMap).forEach(([campoFrontend, campoBackend]) => {
+  const input = document.getElementById(`input-${campoFrontend}`);
+  if (input && !input.classList.contains('d-none')) {
+    payload[campoBackend] = input.value.trim();
+  }
+});
+
+
+  const camposInvalidos = Object.entries(payload).filter(([_, valor]) => {
+  return typeof valor === 'string' && valor.trim() === '';
+  });
+
+  if (camposInvalidos.length > 0) {
+  mostrarToast('⚠️ Hay campos vacíos');
+  return;
+  }
+
+  try {
+      guardarCambios.disabled = true;
+      guardarCambios.textContent = 'Guardando...';
+
+      const token = await obtenerTokenValido();
+      console.log("📦 Payload enviado:", JSON.stringify(payload, null, 2));
+
+      const res = await fetch(`/api/plantas/${idPlanta}/`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },   
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      mostrarToast('✅ Planta actualizada');
+      actualizarVista(data); // helper que refresca los spans
+    } else {
+      mostrarToast('⚠️ Error al actualizar');
+    }
+    
+    guardarCambios.disabled = false;
+    guardarCambios.textContent = '💾 Guardar cambios';
+    document.getElementById("guardarCambios").classList.add("d-none");
+
+  } catch (err) {
+    console.error(err);
+    mostrarToast('❌ Fallo de conexión');
+  }
+});
+
+
+
+function actualizarVista(data) {
+  const camposMap = {
+    nombre: "nombre_personalizado",
+    tipo: "tipo_planta",
+    tamano: "tamano_planta",
+    maceta: "tamano_maceta_litros",
+    ultimoRiego: "fecha_ultimo_riego",
+    enFloracion: "en_floracion",
+    estadoRiego: "estado_texto",
+    sugerencia: "sugerencia_suplementos",
+    recomendado: "recommended_water_ml",
+    frecuencia: "frequency_days",
+    proximoRiego: "next_watering_date",
+    diasRestantes: "days_left"
+  };
+
+  Object.entries(camposMap).forEach(([campoFrontend, campoBackend]) => {
+    const span = document.getElementById(campoFrontend);
+    const input = document.getElementById(`input-${campoFrontend}`);
+    const nuevoValor = data[campoBackend];
+
+    if (span && input && nuevoValor !== undefined) {
+      span.textContent = nuevoValor;
+      span.classList.remove('d-none');
+      input.classList.add('d-none');
+
+      const btnEditar = document.getElementById(`editar-${campoFrontend}`);
+      if (btnEditar) btnEditar.classList.remove('d-none');
+    }
+  });
+}
+
+
