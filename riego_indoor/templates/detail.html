@@ -13,23 +13,56 @@
     <h2 class="mb-4" id="plant-title">Planta</h2>
     
     <ul class="list-group mb-4" id="plant-details">
-      <li class="list-group-item"><strong>Nombre:</strong> <span id="nombre"></span></li>
-      <li class="list-group-item"><strong>Tipo:</strong> <span id="tipo"></span></li>
+      
+      <li class="list-group-item">
+          <strong>Nombre:</strong> 
+          <span id="nombre"></span>
+          <input type="text" id="input-nombre" class="form-control d-none mt-2" />
+          <button id="editar-nombre" class="btn btn-sm btn-outline-success float-end align-items-center" onclick="habilitarEdicion('nombre')">✏️</button>
+      </li>
+    
+      <li class="list-group-item">
+        <strong>Tipo:</strong>
+        <span id="tipo"></span>
+        <select class="form-select d-none" id="input-tipo" type="text">
+          <option value="">Seleccionar</option>
+          <option value="Auto">auto</option>
+          <option value="Foto">foto</option>
+        </select>
+        <button id="editar-tipo" class="btn btn-sm btn-outline-success float-end align-items-center"  onclick="habilitarEdicion('tipo')">✏️</button>
+      </li>
+        
+
       <li class="list-group-item"><strong>Tamaño:</strong> <span id="tamano"></span></li>
+
       <li class="list-group-item"><strong>Maceta:</strong> <span id="maceta"></span></li>
+
       <li class="list-group-item"><strong>Último riego:</strong> <span id="ultimoRiego"></span></li>
+
       <li class="list-group-item"><strong>¿En floración?:</strong> <span id="enFloracion"></span></li>
+
       <li class="list-group-item"><strong>Estado de riego:</strong> <span id="estadoRiego"></span></li>
+
       <li class="list-group-item"><strong>Suplementos sugeridos:</strong> <span id="sugerencia"></span></li>
+
       <li class="list-group-item"><strong>Agua recomendada:</strong> <span id="recomendado"></span></li>
+
       <li class="list-group-item"><strong>Frecuencia de riego:</strong> <span id="frecuencia"></span></li>
+
       <li class="list-group-item"><strong>Próximo riego:</strong> <span id="proximoRiego"></span></li>
+
       <li class="list-group-item"><strong>Días restantes:</strong> <span id="diasRestantes"></span></li>
+
     </ul>
+
+    <div class="d-grid mt-3" style="padding-bottom: 12px;">
+      <button id="guardarCambios" class="btn btn-success d-none">Guardar cambios</button>
+    </div>
 
     <div class="d-grid">
       <button id="Volver" class="btn btn-dark">Volver</button>
     </div>
+
   </div>
   {% load static %}
   <script src="{% static 'js/api.js' %}" ></script>
