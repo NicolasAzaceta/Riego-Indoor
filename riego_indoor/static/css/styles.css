@@ -56,3 +56,26 @@ button:hover {
   90% { opacity: 1; transform: translateX(-50%) translateY(0); }
   100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
 }
+
+.boton-ancho {
+  width: 80vw;
+  max-width: 80vw;
+}
+
+.boton-flotante-centro {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  padding: 0.4rem 1.5rem;
+  font-size: 1rem;
+  border-radius: 0.5rem;
+  background-color: #198754; /* verde Bootstrap */
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+.boton-flotante-centro:hover {
+  background-color: #157347; /* verde más oscuro al pasar el mouse */
+}
