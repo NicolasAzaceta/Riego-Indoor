@@ -5,21 +5,44 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Detalle de Planta</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
   {% load static %}
+  <link rel="stylesheet" href="{% static 'css/variables.css' %}">
+
+  <link rel="icon" type="image/png" href="{% static 'assets/img/planta.png' %}">
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
 <body>
+  <nav class="navbar mb-4">
+  <div class="container-fluid d-flex justify-content-between align-items-center">
+    <span class="navbar-brand mb-0 h1">🌿 Riego Indoor</span>
+
+    <div class="dropdown">
+      <button class="btn btn-borde icono-beige dropdown-toggle d-flex align-items-center" type="button" id="menuUsuario" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bi bi-person-circle me-2 icono-beige"></i>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="menuUsuario">
+        <li><a class="dropdown-item" href="#" id="btnLogout">Cerrar sesión</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+  
   <div class="container py-4">
-    <button id="btn-volver" class="btn btn-dark" >← Volver</button>
-    <h2 class="mb-4" id="plant-title" style="padding-top: 25px;">Planta</h2>
-    
+    <div class="position-relative mb-4">
+      <button id="btn-volver" class="btn btn-dark position-absolute start-0 btn-ngro" >← Volver</button>
+      <h2 class="text-center m-0 fw-bold" id="plant-title">Detalle Planta</h2>
+    </div>
+
     <ul class="list-group mb-4" id="plant-details">
       
       <li class="list-group-item">
           <strong>Nombre:</strong> 
           <span id="nombre"></span>
           <input type="text" id="input-nombre" class="form-control d-none mt-2" />
-          <button id="editar-nombre" class="btn btn-sm btn-outline-success float-end align-items-center" onclick="habilitarEdicion('nombre')">✏️</button>
+          <button id="editar-nombre" class="btn btn-sm btn-outline-success float-end align-items-center" >
+            <i class="bi bi-pencil"></i>
+          </button>
       </li>
     
       <li class="list-group-item">
@@ -37,7 +60,9 @@
           <option value="Mediana">Mediana</option>
           <option value="Grande">Grande</option>
         </select>
-        <button id="editar-tamano" class="btn btn-sm btn-outline-success float-end align-items-center"  onclick="habilitarEdicion('tamano')">✏️</button>
+        <button id="editar-tamano" class="btn btn-sm btn-outline-success float-end align-items-center">
+          <i class="bi bi-pencil"></i>
+        </button>
       </li>
 
       <li class="list-group-item">
@@ -45,14 +70,18 @@
         <span id="maceta"></span>
         <span id="unidad-maceta">litros</span>
         <input type="text" id="input-maceta" class="form-control d-none mt-2" />
-        <button id="editar-maceta" class="btn btn-sm btn-outline-success float-end align-items-center" onclick="habilitarEdicion('maceta')">✏️</button>      
+        <button id="editar-maceta" class="btn btn-sm btn-outline-success float-end align-items-center">
+          <i class="bi bi-pencil"></i>
+        </button>      
       </li>
 
       <li class="list-group-item">
         <strong>Último riego:</strong>
         <span id="ultimoRiego"></span>
         <input type="date" class="form-control d-none" id="input-ultimoRiego" />
-        <button id="editar-ultimoRiego" class="btn btn-sm btn-outline-success float-end align-items-center" onclick="habilitarEdicion('ultimoRiego')">✏️</button>
+        <button id="editar-ultimoRiego" class="btn btn-sm btn-outline-success float-end align-items-center">
+          <i class="bi bi-pencil"></i>
+        </button>
       </li>
 
       <li class="list-group-item">
@@ -63,10 +92,12 @@
           <option value="Si">Si</option>
           <option value="No">No</option>
         </select>
-        <button id="editar-enFloracion" class="btn btn-sm btn-outline-success float-end align-items-center"  onclick="habilitarEdicion('enFloracion')">✏️</button>
+        <button id="editar-enFloracion" class="btn btn-sm btn-outline-success float-end align-items-center">
+          <i class="bi bi-pencil"></i>
+        </button>
       </li>
 
-      <li class="list-group-item"><strong>Estado de riego:</strong> <span id="estadoRiego"></span></li>
+      <li class="list-group-item"><strong>Estado:</strong> <span id="estadoRiego"></span></li>
 
       <li class="list-group-item"><strong>Suplementos sugeridos:</strong> <span id="sugerencia"></span></li>
 
@@ -80,14 +111,21 @@
 
     </ul>
 
+    <div id="toast-container" class="position-fixed start-50 translate-middle-x p-3" style="top: 7rem; z-index: 9999">
+      <div id="toast" class="toast fade align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+          <div class="toast-body" id="toast-body"></div>          
+        </div>
+      </div>
+    </div>
+
     <div class="d-grid mt-3" style="padding-bottom: 12px;">
-      <button id="guardarCambios" class="btn btn-success boton-flotante-centro boton-ancho d-none">Guardar cambios</button>
-      <button id="guardarCambios" class="btn btn-success position-fixed start-50 translate-middle-x bottom-0 mb-3 d-none">Guardar cambios</button>
+      <button id="guardarCambios" class="btn btn-dark boton-flotante-centro boton-ancho d-none">Guardar cambios</button>   
     </div>
 
   </div>
   {% load static %}
-  <script src="{% static 'js/api.js' %}" ></script>
-  <script src="{% static 'js/detail.js' %}" ></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script type="module" src="{% static 'js/detail.js' %}" ></script>
 </body>
 </html>

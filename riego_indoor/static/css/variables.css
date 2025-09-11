@@ -1,0 +1,45 @@
+:root {
+  /* 🌿 Colores base */
+  --color-fondo: #eaffd0; /* Verde limón pastel */
+  --color-fondo2: #cbbfa5; /* Beige claro */
+  --color-fondo3: #d8c8a8; /* Azul muy claro */
+  --color-texto-principal: #212529;
+  --color-texto-secundario: #6c757d;
+  --color-tarjeta: #ffffff;
+  --color-beige-suave: #fff8e1; /* Beige cálido y elegante */
+  --color-header1: #d4c9a1; /* arena suave */
+  --color-header2: #6b8e23; /* OliveDrab */
+  --color-header3: #4e5d52; /* gris con tono verde */
+  --color-header: #121212;
+
+  --fondo-gradiente: linear-gradient(250deg, #1e1e2f, #3a3a5f);
+  --fondo-gradiente2: linear-gradient(45deg, #6b8e23, #2a4d9b);
+
+
+
+  /* 🌱 Verde institucional */
+  --color-verde: #198754;
+  --color-verde-hover: #28a745;
+  --color-verde-suave: #d1e7dd;
+  --color-verde-oscuro: #0f5132;
+
+  /* 🔘 Botones */
+  --color-boton-primario: var(--color-verde);
+  --color-boton-secundario: #6c757d;
+  --color-boton-eliminar: #dc3545;
+  --color-boton-warning: #ffc107;
+
+  /* 💬 Toasts */
+  --toast-success-bg: var(--color-verde);
+  --toast-error-bg: var(--color-boton-eliminar);
+  --toast-warning-bg: var(--color-boton-warning);
+
+  /* 🎨 Animaciones */
+  --color-animacion-fondo: rgba(25, 135, 84, 0.1);
+
+  /* 🧩 Etiquetas */
+  --etiqueta-bg: var(--color-verde-suave);
+  --etiqueta-texto: var(--color-verde-oscuro);
+
+  
+}

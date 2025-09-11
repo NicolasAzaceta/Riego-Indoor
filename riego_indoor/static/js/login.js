@@ -1,47 +1,5 @@
-// Función para validar que el backend está activo y responde correctamente
-// function validarInicio() {
-//   fetch('http://127.0.0.1:8000/home/', {
-//     method: 'GET',
-//     headers: {
-//       'Content-Type': 'application/json'
-//     }
-//   })
-//   .then(response => {
-//     if (!response.ok) {
-//       throw new Error(`Error al conectar con /home/: ${response.status}`);
-//     }
-//     return response.json(); // o .text() si el backend devuelve HTML plano
-//   })
-//   .then(data => {
-//     console.log('Respuesta de /home/:', data);
-//     // Podés mostrar un mensaje visual o habilitar el formulario de login
-//     document.getElementById('estado-backend').textContent = 'Backend activo ✅';
-//   })
-//   .catch(error => {
-//     console.error('Fallo en la conexión con /home/:', error);
-//     document.getElementById('estado-backend').textContent = 'Backend inactivo ❌';
-//   });
-// }
-
-// // Ejecutar la validación al cargar la página
-// window.addEventListener('DOMContentLoaded', validarInicio);
-
 // Función para hacer login y obtener el token JWT
-async function loginUsuario(username, password) {
-  const response = await fetch("http://127.0.0.1:8000/api/auth/token/", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ username, password })
-  });
-
-  if (!response.ok) {
-    throw new Error("Usuario o contraseña incorrectos");
-  }
-
-  return await response.json(); // Devuelve { access, refresh }
-}
+import { loginUsuario } from "./auth.js";
 
 // // Evento submit del formulario de login
 document.getElementById("login-form").addEventListener("submit", async (e) => {
@@ -50,12 +8,27 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
    const password = document.getElementById("password").value;
 
    try {
-     const { access } = await loginUsuario(username, password);
-     localStorage.setItem("token", access); // Guarda el token para usarlo después
-     alert("Login exitoso");
-     window.location.href = "/home/dashboard/"; // Redirige a la página principal
+     const { access, refresh } = await loginUsuario(username, password);
+     mostrarToast("Login exitoso, ingresando...🌿");
+     setTimeout(() => {
+        window.location.href = "/home/dashboard/"; // Redirige a la página principal
+      }, 2500);     
      } catch (err) {
-     alert("Usuario o contraseña incorrectos");
+     mostrarToast("Usuario o contraseña incorrectos");
      console.error(err);
      }
 });
+
+function mostrarToast(mensaje, tipo = "success") {
+  const toastBody = document.getElementById("toast-body");
+  const toast = document.getElementById("toast");
+
+  toastBody.textContent = mensaje;
+  toast.classList.remove("bg-success", "bg-danger", "bg-warning");
+  toast.classList.add(`bg-${tipo}`);
+
+  // Inicializar y mostrar el toast
+  const bsToast = new bootstrap.Toast(toast, { delay: 2000 });
+  bsToast.show();
+
+}
