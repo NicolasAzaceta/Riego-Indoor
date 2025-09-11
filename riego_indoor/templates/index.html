@@ -5,33 +5,88 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mis Plantas</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
   {% load static %}
+  <link rel="stylesheet" href="{% static 'css/variables.css' %}">
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+
+  <link rel="icon" type="image/png" href="{% static 'assets/img/planta.png' %}">
+  <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
   
 </head>
 <body>
-  <nav class="navbar navbar-dark bg-dark mb-4">
-    <div class="container-fluid" >
-      <span class="navbar-brand mb-0 h1">🌿 Riego Indoor</span>
-    </div>
-  </nav>
+  <nav class="navbar mb-4">
+  <div class="container-fluid d-flex justify-content-between align-items-center">
+    <span class="navbar-brand mb-0 h1">🌿 Riego Indoor</span>
 
-  <div class="container"  style="padding-bottom: 25px;">
-    <h2 class="mb-4">Mis Plantas</h2>
-    <div id="plant-list" class="row gy-3"></div>
-    <div class="d-grid mt-4">
-      <button class="btn btn-dark" onclick="window.location.href='/home/add/'">Agregar Planta</button>
+    <div class="dropdown">
+      <button class="btn btn-borde icono-beige dropdown-toggle d-flex align-items-center" type="button" id="menuUsuario" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bi bi-person-circle me-2 icono-beige"></i>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="menuUsuario">
+        <li><a class="dropdown-item" href="#" id="btnLogout">Cerrar sesión</a></li>
+      </ul>
     </div>
   </div>
+  </nav>
 
-  {% load static %}
-  <script src="{% static 'js/login.js' %}"></script>
-  <script type="module" src="{% static 'js/plants.js' %}"></script>
-  <script src="{% static 'js/api.js' %}"></script>
+
+
+  <div class="container"  style="padding-bottom: 25px;">
+    <div class="card-titulo">
+      <h2 class="mb-4">
+      <img src="/static/assets/img/planta.png" alt="Icono planta" style="width: 32px; height: 32px; margin-right: 8px; margin-bottom: 10px;">
+        Mis Plantas
+      <img src="/static/assets/img/planta.png" alt="Icono planta" style="width: 32px; height: 32px; margin-right: 8px; margin-bottom: 10px;">
+      </h2>
+    </div>
+    <div id="plant-list" class="row gy-3"></div>
+    <div class="container-btn-add">
+    <button id="btnAgregarPlanta" class="btn btn-success btn-agregar-flotante" title="Agregar planta">
+      <i class="bi bi-leaf me-2" style="font-size: 1.4rem;"></i> Agregar planta
+
+    </button>
+    </div>
+
   
   <div class="container">
   <div class="row" id="plant-list"></div>
   </div>
+      <!-- Modal de confirmación -->
+    <div class="modal fade" id="modalConfirmar" tabindex="-1" aria-labelledby="modalConfirmarLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header justify-content-center">
+        <h5 class="modal-title text-center w-100" id="modalConfirmarLabel">¿Eliminar planta?</h5>
+      </div>
+      <div class="modal-body text-center">
+        Esta acción no se puede deshacer.
+      </div>
+      <div class="modal-footer justify-content-end">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="btnConfirmarEliminar">Eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+    <!-- Toast de éxito -->
+    <div id="toast-container" class="position-fixed start-50 translate-middle-x p-3" style="top: 7rem; z-index: 9999">
+      <div id="toast" class="toast fade align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+          <div class="toast-body" id="toast-body"></div>          
+        </div>
+      </div>
+    </div>
+
+
+    
+  {% load static %}
+  <script type="module" src="{% static 'js/plants.js' %}"></script>
+  <script type="module" src="{% static 'js/api.js' %}"></script>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

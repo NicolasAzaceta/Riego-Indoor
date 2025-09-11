@@ -1,20 +1,70 @@
 /* styles.css */
 
 body {
+  transition: background 0.6s ease;
   font-family: 'Segoe UI', sans-serif;
   margin: 0;
   padding: 0;
-  background-color: #f4f6f8;
-  color: #333;
+  /* background-color: #f4f6f8;
+  color: #333; */
+  background: var(--fondo-gradiente2);
+  color: var(--color-texto-principal);
+}
+.card-titulo {
+  background-color: var(--color-beige-suave);
+  color: var(--color-texto-principal);
+  padding: 1.2rem 2rem 0.4rem 2rem; /* arriba, derecha, abajo, izquierda */
+  margin: 1rem 0;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  text-align: center;
+  width: 100%;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card-titulo h2 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 600;
 }
 
-header, nav {
+.btn-success {
+  background-color: var(--color-boton-primario);
+}
+.btn-success:hover {
+  background-color: var(--color-boton-primario-hover);
+}
+
+.btn-regar, .btn-ver-detalle {
+  box-shadow: 0 0 0.75rem 0.2rem rgba(13, 110, 253, 0.25); /* sombra azul */
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.btn-ver-detalle:hover {
+  box-shadow: 0 0 0.7rem 0.4rem rgba(13, 110, 253, 0.35);
+  background-color: transparent;
+  color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+.btn-regar:hover {
+  box-shadow: 0 0 0.7rem 0.4rem rgba(13, 110, 253, 0.35);
+}
+
+/* header, nav {
   background-color: #2c3e50;
+  color: white;
+  padding: 1rem; */
+/* } */
+header, nav {
+  background-color: var(--color-header);
   color: white;
   padding: 1rem;
 }
+.navbar-brand {
+  color: #fff8e1 !important; /* beige suave con toque cálido */
+}
 
-button {
+/* button {
   background-color: #3498db;
   color: white;
   border: none;
@@ -25,37 +75,20 @@ button {
 
 button:hover {
   background-color: #2980b9;
+} */
+ button {
+  background-color: var(--color-boton-secundario);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
-.card {
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  padding: 1rem;
-  margin: 1rem;
+button:hover {
+  background-color: var(--color-boton-secundario-hover);
 }
 
-.toast-mensaje {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: #333;
-  color: #fff;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 16px;
-  z-index: 9999;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  animation: fadeInOut 3s ease-in-out;
-}
-
-@keyframes fadeInOut {
-  0% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
-  10% { opacity: 1; transform: translateX(-50%) translateY(0); }
-  90% { opacity: 1; transform: translateX(-50%) translateY(0); }
-  100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
-}
 
 .boton-ancho {
   width: 80vw;
@@ -63,6 +96,7 @@ button:hover {
 }
 
 .boton-flotante-centro {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   position: fixed;
   bottom: 1rem;
   left: 50%;
@@ -71,11 +105,271 @@ button:hover {
   padding: 0.4rem 1.5rem;
   font-size: 1rem;
   border-radius: 0.5rem;
-  background-color: #198754; /* verde Bootstrap */
+  background-color: var(--color-boton-primario);
   color: white;
   border: none;
-  cursor: pointer;
+  /* cursor: pointer; */
 }
 .boton-flotante-centro:hover {
-  background-color: #157347; /* verde más oscuro al pasar el mouse */
+  transform: translateX(-50%) scale(1.03);
+  background-color: var(--color-boton-primario) !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+} 
+
+.btn-eliminar {
+  position: absolute;
+  top: 0.7rem;
+  right: 1rem;
+  z-index: 10;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.9rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* .btn-eliminar {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+} */
+.card:hover .btn-eliminar {
+  opacity: 1;
+}
+
+.card {
+  /* will-change: transform, box-shadow; */
+  /* background-color: white; */
+  border-radius: 8px;
+  /* box-shadow: 0 2px 6px rgba(0,0,0,0.1); */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  /* padding: 1.2rem 2rem 0.4rem 2rem; arriba, derecha, abajo, izquierda */
+  padding: 2rem;
+  margin: 1rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  background-color: var(--color-beige-suave);
+  /* overflow: visible; */
+}
+
+.card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.animar-entrada {
+  opacity: 0;
+  animation: fadeInUp 1s ease forwards;
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+  }
+}
+
+#animacion-riego {
+  position: fixed;
+  top: 30%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+}
+
+.oculto {
+  display: none;
+}
+
+.animacion-local {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  pointer-events: none; 
+}
+
+.oculto {
+  display: none;
+}
+
+.desvanecer {
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+#toast {
+  min-width: 280px;
+  font-size: 1rem;
+  box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.3);
+  opacity: 1 !important; /* fuerza visibilidad si fade no se aplica bien */
+}
+.toast-success {
+  background-color: var(--toast-success-bg);
+  color: white;
+}
+.toast-error {
+  background-color: var(--toast-error-bg);
+  color: white;
+}
+.toast-warning {
+  background-color: var(--toast-warning-bg);
+  color: black;
+}
+
+
+.card-body button {
+  margin: 4px 0;
+}
+
+.btn-ngro {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.btn-ngro:hover {
+  transform: scale(1.03);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.etiquetas-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  justify-content: center;
+}
+
+/* .etiqueta {
+  background-color: #198754;
+  color: white;
+  padding: 0.3rem 0.6rem;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+} */
+.etiqueta {
+  background-color: var(--etiqueta-bg);
+  color: var(--etiqueta-texto);
+  padding: 0.3rem 0.6rem;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+}
+
+.modal-header,
+.modal-footer {
+  border-left: none;
+  border-right: none;
+  border-top: 1px solid rgba(0,0,0,0.1); /* si querés suavizar */
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+  margin-inline: 1rem; /* separa visualmente del borde */
+}
+
+.modal-content {
+  background-color: var(--color-beige-suave);
+}
+
+.list-group-item {
+  background-color: var(--color-beige-suave);
+  border: none;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+#nombre, #tipo, #tamano, #maceta, #ultimo_riego {
+  background-color: var(--color-beige-suave);
+}
+
+input.form-control:-webkit-autofill {
+  background-color: var(--color-beige-suave) !important;
+  -webkit-box-shadow: 0 0 0px 1000px var(--color-beige-suave) inset;
+  color: var(--color-texto-principal) !important;
+}
+
+.card.estado-verde::before,
+.card.estado-amarillo::before,
+.card.estado-naranja::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  border-radius: 12px;
+  border: 3px solid;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.card.estado-verde::before {
+  border-color: #198754; /* verde institucional */
+}
+
+.card.estado-amarillo::before {
+  border-color: #ffc107; /* amarillo Bootstrap */
+}
+
+.card.estado-naranja::before {
+   border-color: #dc3545; /* rojo Bootstrap */
+  /* border-color: #fd7e14; naranja suave */
+}
+
+/* border-color: #dc3545; rojo Bootstrap */
+
+.card::before {
+  transition: border-color 0.4s ease;
+}
+
+.icono-beige {
+  color: var(--color-beige-suave);
+}
+
+.btn-borde {
+  border-color: var(--color-beige-suave);
+}
+
+.dropdown-menu {
+  background-color: var(--color-beige-suave); /* mismo color que la tarjeta */
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.container-btn-add {
+  position: relative;
+  width: 100%;
+  height: 0;
+  border-radius: 30%;
+}
+
+i.bi {
+  font-style: normal;
+}
+
+.btn-agregar-flotante {
+  font-family: 'Segoe UI', sans-serif !important;
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  /* width: 148px;
+  height: 48px; */
+  background-color: #198754; /* verde institucional */
+  color: white;
+  border: none;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  z-index: 1000;
+}
+
+.btn-agregar-flotante:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+  background-color: #157347; /* verde más oscuro */
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.btn-agregar-flotante {
+  animation: fadeIn 0.4s ease-out;
 }

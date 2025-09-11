@@ -5,21 +5,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Agregar Planta</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
   {% load static %}
+  <link rel="stylesheet" href="{% static 'css/variables.css' %}">
+
+  <link rel="icon" type="image/png" href="{% static 'assets/img/planta.png' %}">
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
 <body>
+  <nav class="navbar mb-4">
+  <div class="container-fluid d-flex justify-content-between align-items-center">
+    <span class="navbar-brand mb-0 h1">🌿 Riego Indoor</span>
+
+    <div class="dropdown">
+      <button class="btn btn-borde icono-beige dropdown-toggle d-flex align-items-center" type="button" id="menuUsuario" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bi bi-person-circle me-2 icono-beige"></i>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="menuUsuario">
+        <li><a class="dropdown-item" href="#" id="btnLogout">Cerrar sesión</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+  
   <div class="container py-4">
-    <button id="btn-volver" class="btn btn-dark" >← Volver</button>
-    <h2 class="mb-4" style="padding-top: 25px;">Agregar Planta</h2>
+    <div class="position-relative mb-4">
+      <button id="btn-volver" class="btn btn-dark btn-ngro position-absolute start-0" >← Volver</button>
+      <h2 class="text-center m-0 fw-bold">Agregar Planta</h2>
+    </div>
 
     <form id="form-agregar-planta">
       <div class="mb-3">
-        <label for="nombre" class="form-label">Nombre<span style="color: red">*</span></label>
+        <label for="nombre" class="form-label">Nombre<span style="color: red"> *</span></label>
         <input type="text" class="form-control" id="nombre" required />
       </div>
       <div class="mb-3">
-        <label for="tipo" class="form-label">Tipo<span style="color: red">*</span></label>
+        <label for="tipo" class="form-label">Tipo<span style="color: red"> *</span></label>
         <select class="form-select" id="tipo" type="text" required>
           <option value="">Seleccionar</option>
           <option value="Auto">Autofloreciente</option>
@@ -27,7 +48,7 @@
         </select>
       </div>
       <div class="mb-3">
-        <label for="tamano" class="form-label">Tamaño de la planta<span style="color: red">*</span></label>
+        <label for="tamano" class="form-label">Tamaño de la planta<span style="color: red"> *</span></label>
         <select class="form-select" id="tamano" type="text" required>
           <option value="">Seleccionar</option>
           <option value="Pequeña">Pequeña</option>
@@ -37,7 +58,7 @@
       </div>
 
       <div class="mb-3">
-      <label for="maceta" class="form-label">Tamaño de la maceta en litros<span style="color: red">*</span></label>
+      <label for="maceta" class="form-label">Tamaño de la maceta en litros<span style="color: red"> *</span></label>
       <input type="number" class="form-control" id="maceta" name="maceta" placeholder="Ej: 5" required/>
       </div>
 
@@ -46,18 +67,27 @@
 
 
       <div class="mb-3">
-        <label for="ultimo_riego" class="form-label">Último riego<span style="color: red">*</span></label>
+        <label for="ultimo_riego" class="form-label">Último riego<span style="color: red"> *</span></label>
         <input type="date" class="form-control" id="ultimo_riego" required />
       </div>
 
+      <div id="toast-container" class="position-fixed start-50 translate-middle-x p-3" style="top: 7rem; z-index: 9999">
+        <div id="toast" class="toast fade align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+          <div class="d-flex">
+            <div class="toast-body" id="toast-body"></div>          
+          </div>
+        </div>
+      </div>
+
       <div class="d-grid">
-        <button type="submit" class="btn btn-dark">Guardar</button>   
+        <button type="submit" class="btn btn-dark btn-ngro">Guardar</button>   
       </div>
     </form>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
   {% load static %}
-  <script src="{% static 'js/api.js' %}" ></script>
-  <script src="{% static 'js/add.js' %}" defer></script>
+  <script type="module" src="{% static 'js/add.js' %}" defer></script>
 </body>
 </html>
 
