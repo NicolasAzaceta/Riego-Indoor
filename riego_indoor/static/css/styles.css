@@ -7,7 +7,7 @@ body {
   padding: 0;
   /* background-color: #f4f6f8;
   color: #333; */
-  background: var(--fondo-gradiente2);
+  background: var(--fondo-gradiente3);
   color: var(--color-texto-principal);
 }
 .card-titulo {
@@ -35,7 +35,7 @@ body {
 }
 
 .btn-regar, .btn-ver-detalle {
-  box-shadow: 0 0 0.75rem 0.2rem rgba(13, 110, 253, 0.25); /* sombra azul */
+  /* box-shadow: 0 0 0.75rem 0.2rem rgba(13, 110, 253, 0.25); sombra azul */
   transition: box-shadow 0.3s ease, transform 0.3s ease;
 }
 
@@ -347,9 +347,10 @@ i.bi {
   right: 2rem;
   /* width: 148px;
   height: 48px; */
-  background-color: #198754; /* verde institucional */
-  color: white;
-  border: none;
+  /* background-color: #198754; verde institucional */
+  background-color: var(--color-beige-suave);
+  /* color: white; */
+  /* border: none; */
   font-size: 1.2rem;
   display: flex;
   align-items: center;
@@ -362,7 +363,7 @@ i.bi {
 .btn-agregar-flotante:hover {
   transform: scale(1.1);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
-  background-color: #157347; /* verde más oscuro */
+  /* background-color: #157347; verde más oscuro */
 }
 
 @keyframes fadeIn {
@@ -373,3 +374,15 @@ i.bi {
 .btn-agregar-flotante {
   animation: fadeIn 0.4s ease-out;
 }
+
+.card-login {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  transition: none !important;
+  transform: none !important;
+}
+.card-login:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); /* misma sombra, sin cambio */
+}
+
+
+

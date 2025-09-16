@@ -241,35 +241,66 @@ document.addEventListener("DOMContentLoaded", async () => {
       tarjeta.style.animationDelay = `${index * 100}ms`;
 
       tarjeta.innerHTML = `
-      <div class="card-body text-center d-flex flex-column align-items-center">
-        <h5 class="card-title">${planta.nombre_personalizado}</h5>
-        <p class="card-text">🌱 <strong>${planta.estado_texto}</strong></p> 
+      <div class="card-body text-center flex-grow-1 d-flex flex-column align-items-center justify-content-start">
+      <h5 class="card-title">${planta.nombre_personalizado}</h5>
+      <p class="card-text">🌱 <strong>${planta.estado_texto}</strong></p>
 
-        <div class="d-flex gap-2 mt-2">
-          <button class="btn btn-outline-primary btn-ver-detalle btn-sm" data-id="${planta.id}" title="Ver detalles">
-            <i class="bi bi-text-indent-left me-1"></i>Ver detalles
-          </button>
-
-          <button class="btn btn-primary btn-regar btn-sm" data-id="${planta.id}" title="Regar planta">
-            <i class="bi bi-droplet me-1"></i>Regar planta
-          </button>
-        </div>
-
-        <button class="btn btn-outline-danger btn-eliminar mt-2" data-id="${planta.id}" title="Eliminar planta">
-          <i class="bi bi-trash"></i>
-        </button>
-
-        <div class="animacion-local oculto">
-          <lottie-player
+      <div class="animacion-local oculto mt-3">
+        <lottie-player
           src="/static/assets/animaciones/water.json"
           background="transparent"
           speed="1"
           style="width: 220px; height: 220px;"
           autoplay>
-          </lottie-player>
-        </div>
+        </lottie-player>
       </div>
+    </div>
+
+    <div class="card-footer bg-transparent border-0 mt-auto text-center">
+      <div class="d-flex justify-content-center gap-2 mb-2">
+        <button class="btn btn-outline-primary btn-ver-detalle me-2" data-id="${planta.id}" title="Ver detalles">
+          <i class="bi bi-text-indent-left"></i> Ver detalles
+        </button>
+        <button class="btn btn-primary btn-regar" data-id="${planta.id}" title="Regar planta">
+          <i class="bi bi-droplet me-1"></i>Regar planta
+        </button>
+      </div>
+      <button class="btn btn-outline-danger btn-eliminar btn-sm" data-id="${planta.id}" title="Eliminar planta">
+        <i class="bi bi-trash"></i>
+      </button>
+    </div>
 `;
+
+//       tarjeta.innerHTML = `
+//       <div class="card-body text-center d-flex flex-column align-items-center">
+//         <h5 class="card-title">${planta.nombre_personalizado}</h5>
+//         <p class="card-text">🌱 <strong>${planta.estado_texto}</strong></p>
+        
+//         <div class="d-flex gap-2 mt-2">
+//           <button class="btn btn-outline-primary btn-ver-detalle btn-sm me-2" data-id="${planta.id}" title="Ver detalles">
+//             <i class="bi bi-text-indent-left"></i>Detalles
+//           </button>
+
+//           <button class="btn btn-primary btn-regar btn-sm" data-id="${planta.id}" title="Regar planta">
+//             <i class="bi bi-droplet me-1"></i>Regar
+//           </button>
+//         </div>
+
+//         <button class="btn btn-outline-danger btn-eliminar mt-2" data-id="${planta.id}" title="Eliminar planta">
+//           <i class="bi bi-trash"></i>
+//         </button>
+
+//         <div class="animacion-local oculto">
+//           <lottie-player
+//           src="/static/assets/animaciones/water.json"
+//           background="transparent"
+//           speed="1"
+//           style="width: 220px; height: 220px;"
+//           autoplay>
+//           </lottie-player>
+//         </div>
+//       </div>
+// `;
 
 
       // tarjeta.innerHTML = `

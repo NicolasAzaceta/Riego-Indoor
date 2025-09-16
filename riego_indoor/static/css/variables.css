@@ -11,9 +11,14 @@
   --color-header2: #6b8e23; /* OliveDrab */
   --color-header3: #4e5d52; /* gris con tono verde */
   --color-header: #121212;
+  --color-turquesa: #40e0d0; /* Turquesa vibrante */
+  --color-turquesa-suave: #b2f7f1; /* Turquesa muy claro */
+  --color-turquesa-oscuro: #008080; /* Turquesa oscuro */
+  --color-turquesa-sobrio: #80cbc4; /* Turquesa sobrio */
 
-  --fondo-gradiente: linear-gradient(250deg, #1e1e2f, #3a3a5f);
+  --fondo-gradiente: linear-gradient(45deg, #dc3545, #40e0d0);
   --fondo-gradiente2: linear-gradient(45deg, #6b8e23, #2a4d9b);
+  --fondo-gradiente3: linear-gradient(45deg, #40e0d0, #6b8e23);
 
 
 
