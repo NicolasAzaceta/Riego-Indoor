@@ -1,6 +1,19 @@
 // Función para hacer login y obtener el token JWT
 import { loginUsuario } from "./auth.js";
 
+
+document.addEventListener("DOMContentLoaded", () => {
+  lottie.loadAnimation({
+    container: document.getElementById("lottie-login"),
+    renderer: "svg",
+    loop: true,
+    autoplay: true,
+    path: "/static/assets/animaciones/plant.json" // Ajustá la ruta según tu estructura
+  });
+});
+
+
+
 // // Evento submit del formulario de login
 document.getElementById("login-form").addEventListener("submit", async (e) => {
    e.preventDefault();
