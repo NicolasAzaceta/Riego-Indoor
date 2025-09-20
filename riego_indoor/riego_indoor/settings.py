@@ -1,5 +1,6 @@
 from pathlib import Path
 from datetime import timedelta
+import os
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -45,6 +46,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'plantas',
+    'notificaciones',
 ]
 
 MIDDLEWARE = [
@@ -152,6 +154,8 @@ USE_I18N = True
 
 USE_TZ = True
 
+# Ruta al archivo de credenciales de la cuenta de servicio
+GOOGLE_SERVICE_ACCOUNT_FILE = os.path.join(BASE_DIR, 'credentials', 'google_service_account.json')
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
