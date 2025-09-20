@@ -29,3 +29,7 @@ Thumbs.db
 
 # Archivo de variables de entorno
 .env 
+
+credentials/*.json
+
+*.pyc

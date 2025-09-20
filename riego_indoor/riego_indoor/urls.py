@@ -18,9 +18,9 @@ urlpatterns = [
       # API principal
     path('api/', include('plantas.urls')),
     path('home/', include('plantas.urls')),
-
+    path('api/', include('notificaciones.urls')),
     # JWT
     path('api/auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-
+    
 ]
