@@ -30,6 +30,6 @@ Thumbs.db
 # Archivo de variables de entorno
 .env 
 
-credentials/*.json
+riego_indoor/credentials/*.json
 
 *.pyc
