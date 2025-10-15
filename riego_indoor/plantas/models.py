@@ -21,9 +21,10 @@ class Planta(models.Model):
     tamano_maceta_litros = models.FloatField(help_text="Tamaño en litros")
     fecha_ultimo_riego = models.DateField()
     en_floracion = models.BooleanField(default=False)
+    google_calendar_event_id = models.CharField(max_length=255, blank=True, null=True, help_text="ID del evento de Google Calendar para el próximo riego")
 
     # ---------- LÓGICA DE CÁLCULO ----------
-    def calculos_riego(self):
+    def calculos_riego(self, temperatura_externa=None):
        
         litros = max(self.tamano_maceta_litros or 0, 0)
         size = self.tamano_planta
@@ -39,7 +40,16 @@ class Planta(models.Model):
         base = litros / 2.0  # p.ej., 12L -> 6 días
         size_offset = {'pequeña': -1.0, 'mediana': 0.0, 'grande': 1.0}.get(size, 0.0)
         stage_offset = -1.0 if en_flor else 0.0
-        frequency_days = int(max(2, min(7, round(base + size_offset + stage_offset, 0))))
+        temp_offset = 0.0
+
+        # Si se provee una temperatura, la usamos para ajustar la frecuencia
+        if temperatura_externa is not None:
+            if temperatura_externa > 28:
+                temp_offset = -1.0  # Más calor, regar más seguido
+            elif temperatura_externa < 15:
+                temp_offset = 1.0   # Menos calor, regar menos seguido
+
+        frequency_days = int(max(2, min(7, round(base + size_offset + stage_offset + temp_offset, 0))))
 
         next_watering_date = self.fecha_ultimo_riego + timedelta(days=frequency_days)
         today = date.today()

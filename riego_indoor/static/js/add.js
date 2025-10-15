@@ -1,30 +1,5 @@
 import { fetchProtegido } from "./auth.js";
-import { logoutUsuario } from './auth.js'; // si usás módulos
-
-document.addEventListener("DOMContentLoaded", () => {
-  const btnLogout = document.getElementById("btnLogout");
-  if (btnLogout) {
-    btnLogout.addEventListener("click", (e) => {
-      e.preventDefault();
-      console.log("Logout clickeado");
-      mostrarToast("👋 ¡Sesión cerrada! ¡Hasta luego!");
-      setTimeout(() => logoutUsuario(), 2000);
-    });
-  }
-});
-
-function mostrarToast(mensaje, tipo = "success") {
-  const toastBody = document.getElementById("toast-body");
-  const toast = document.getElementById("toast");
-
-  toastBody.textContent = mensaje;
-  toast.classList.remove("bg-success", "bg-danger", "bg-warning");
-  toast.classList.add(`bg-${tipo}`);
-
-  const bsToast = new bootstrap.Toast(toast, { delay: 2000 });
-  bsToast.show();
-}
-
+import { mostrarToast } from "./api.js";
 
 function configurarBotonVolver(idBoton, destino) {
   const boton = document.getElementById(idBoton);
@@ -36,7 +11,7 @@ function configurarBotonVolver(idBoton, destino) {
 
 document.addEventListener("DOMContentLoaded", () => {
 
-  configurarBotonVolver("btn-volver", "/home/dashboard/");
+  configurarBotonVolver("btn-volver", "/dashboard/");
 
   console.log("✅ add.js cargado");
   const form = document.getElementById("form-agregar-planta");
@@ -80,7 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // Feedback visual y redirección 
       mostrarToast("🌱 Planta guardada con éxito");
       setTimeout(() => {
-        window.location.href = "/home/add/";
+        window.location.href = "/add/";
       }, 2500);
 
 
@@ -90,4 +65,3 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
-

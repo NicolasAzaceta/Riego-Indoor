@@ -2,11 +2,43 @@ import os
 from datetime import datetime, timedelta
 from dateutil import parser as dateparser
 import pytz
-
-
 from django.conf import settings
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
+
+from google_auth_oauthlib.flow import Flow
+from google.oauth2.credentials import Credentials
+
+from google_auth_oauthlib.flow import Flow
+from googleapiclient.discovery import build
+from google.oauth2.credentials import Credentials
+from django.conf import settings
+import json
+
+CLIENT_SECRET_FILE = 'notificaciones/services/client_secret.json'
+
+# Configurar el flujo de OAuth 2.0
+def get_oauth_flow():
+    return Flow.from_client_secrets_file(
+        CLIENT_SECRET_FILE,
+        scopes=['https://www.googleapis.com/auth/calendar'],
+        redirect_uri='http://localhost:8000/google-calendar/oauth2callback/'  # Apunta a la vista de callback del backend
+    )
+
+# Obtener el servicio de Google Calendar con las credenciales OAuth del usuario
+def get_user_calendar_service(user):
+    with open(CLIENT_SECRET_FILE, 'r') as f:
+        client_config = json.load(f)['web']
+
+    profile = user.profile
+    credentials = Credentials(
+        token=profile.google_access_token,
+        refresh_token=profile.google_refresh_token,
+        token_uri='https://oauth2.googleapis.com/token',
+        client_id=client_config.get('client_id'),
+        client_secret=client_config.get('client_secret')
+    )
+    return build('calendar', 'v3', credentials=credentials)
 
 
 SCOPES = ['https://www.googleapis.com/auth/calendar']
@@ -28,7 +60,7 @@ def _get_credentials_from_file():
 
 
 
-def get_calendar_service():
+def get_service_account_calendar_service():
     """Construye y devuelve el cliente de Google Calendar API."""
     credentials = _get_credentials_from_file()
     service = build('calendar', 'v3', credentials=credentials)
@@ -68,7 +100,7 @@ def create_calendar_event(
     reminders_minutes: int = 10,
   ):
  """Crea un evento en Google Calendar y devuelve el dict del evento (incluye htmlLink)."""
- service = get_calendar_service()
+ service = get_service_account_calendar_service() # Usamos la cuenta de servicio por defecto
 
 
  start_dt = ensure_timezone(start_dt, tz_name)
