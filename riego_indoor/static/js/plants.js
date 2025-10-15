@@ -1,20 +1,8 @@
 import { fetchProtegido } from "./auth.js";
+import { logoutUsuario } from './auth.js';
+import { checkGoogleCalendarStatus, iniciarVinculacionGoogle, mostrarToast } from './api.js';
 
 let plantaAEliminar = null;
-
-function mostrarToast(mensaje, tipo = "success") {
-  const toastBody = document.getElementById("toast-body");
-  const toast = document.getElementById("toast");
-
-  toastBody.textContent = mensaje;
-  toast.classList.remove("bg-success", "bg-danger", "bg-warning");
-  toast.classList.add(`bg-${tipo}`);
-
-  // Inicializar y mostrar el toast
-  const bsToast = new bootstrap.Toast(toast, { delay: 2000 });
-  bsToast.show();
-
-}
 
 async function eliminarPlanta(id, cardElement) {
   try {
@@ -258,81 +246,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     <div class="card-footer bg-transparent border-0 mt-auto text-center">
       <div class="d-flex justify-content-center gap-2 mb-2">
-        <button class="btn btn-outline-primary btn-ver-detalle me-2" data-id="${planta.id}" title="Ver detalles">
-          <i class="bi bi-text-indent-left"></i> Ver detalles
+        <button class="btn btn-violeta-outline btn-ver-detalle me-2" data-id="${planta.id}" title="Ver detalles">
+          <i class="bi bi-text-indent-left"></i> Detalle
         </button>
-        <button class="btn btn-primary btn-regar" data-id="${planta.id}" title="Regar planta">
-          <i class="bi bi-droplet me-1"></i>Regar planta
+        <button class="btn btn-celeste-outline btn-regar" data-id="${planta.id}" title="Regar planta">
+          <i class="bi bi-droplet me-1"></i>Regar
         </button>
       </div>
-      <button class="btn btn-outline-danger btn-eliminar btn-sm" data-id="${planta.id}" title="Eliminar planta">
+      <button class="btn btn-eliminar btn-sm" data-id="${planta.id}" title="Eliminar planta">
         <i class="bi bi-trash"></i>
       </button>
     </div>
 `;
-
-//       tarjeta.innerHTML = `
-//       <div class="card-body text-center d-flex flex-column align-items-center">
-//         <h5 class="card-title">${planta.nombre_personalizado}</h5>
-//         <p class="card-text">🌱 <strong>${planta.estado_texto}</strong></p>
-        
-//         <div class="d-flex gap-2 mt-2">
-//           <button class="btn btn-outline-primary btn-ver-detalle btn-sm me-2" data-id="${planta.id}" title="Ver detalles">
-//             <i class="bi bi-text-indent-left"></i>Detalles
-//           </button>
-
-//           <button class="btn btn-primary btn-regar btn-sm" data-id="${planta.id}" title="Regar planta">
-//             <i class="bi bi-droplet me-1"></i>Regar
-//           </button>
-//         </div>
-
-//         <button class="btn btn-outline-danger btn-eliminar mt-2" data-id="${planta.id}" title="Eliminar planta">
-//           <i class="bi bi-trash"></i>
-//         </button>
-
-//         <div class="animacion-local oculto">
-//           <lottie-player
-//           src="/static/assets/animaciones/water.json"
-//           background="transparent"
-//           speed="1"
-//           style="width: 220px; height: 220px;"
-//           autoplay>
-//           </lottie-player>
-//         </div>
-//       </div>
-// `;
-
-
-      // tarjeta.innerHTML = `
-      //   <div class="card-body text-center d-flex flex-column align-items-center">
-      //     <h5 class="card-title">${planta.nombre_personalizado}</h5>
-      //     <p class="card-text">🌱 <strong>${planta.estado_texto}</strong></p> 
-      //     <button class="btn btn-outline-primary btn-ver-detalle" data-id="${planta.id}" title="Ver detalles">
-      //       <i class="bi bi-text-indent-left" style="font-size: 1.1rem;"></i> Ver detalles
-      //     </button>
-
-      //     <button class="btn btn-outline-primary btn-regar" data-id="${planta.id}" title="Regar planta">
-      //       <i class="bi bi-droplet"></i> Regar planta
-      //     </button>
-
-      //     <button class="btn btn-outline-danger btn-eliminar" data-id="${planta.id}" title="Eliminar planta">
-      //       <i class="bi bi-trash"></i>
-      //     </button>
-
-      //     <div class="animacion-local oculto">
-      //       <lottie-player
-      //         src="/static/assets/animaciones/water.json"
-      //         background="transparent"
-      //         speed="1"
-      //         style="width: 220px; height: 220px;"
-      //         autoplay>
-      //       </lottie-player>
-      //     </div>
-      //   </div>
-      // `;
-
-      const btnRegar = tarjeta.querySelector(".btn-regar");
-      btnRegar.addEventListener("click", async () => {
+      const btnRegar = tarjeta.querySelector(".btn-regar");      btnRegar.addEventListener("click", async () => {
         const animacionLocal = tarjeta.querySelector(".animacion-local");
         const player = animacionLocal.querySelector("lottie-player");
 
@@ -344,19 +270,29 @@ document.addEventListener("DOMContentLoaded", async () => {
           animacionLocal.classList.add("oculto");
         }, 2000);
 
-        await regarPlanta(planta.id);
-        const data = await obtenerPlanta(planta.id);
+        // Corregimos: regarPlanta ahora devuelve el estado actualizado.
+        const riegoExitoso = await regarPlanta(planta.id);
+        if (!riegoExitoso) return; // Si el riego falló, no continuamos.
+
+        const data = await obtenerPlanta(planta.id); // Obtenemos los datos completos y recalculados de la planta.
         if (!data) return;
 
         const textoRiego = tarjeta.querySelector(".card-text");
         textoRiego.innerHTML = `🌱 <strong>${data.estado_texto}</strong>`;
 
-        tarjeta.classList.remove("estado-amarillo", "estado-naranja");
+        // Limpiamos todas las clases de estado antes de aplicar la nueva
+        tarjeta.classList.remove("estado-verde", "estado-amarillo", "estado-naranja");
+
+        // Aplicamos la clase correcta según el nuevo estado
         switch (data.estado_riego) {
           case 'no_necesita':
             tarjeta.classList.add("estado-verde");
             break;
-          }
+          case 'pronto':
+            tarjeta.classList.add("estado-amarillo");
+            break;
+          // No hay caso para 'hoy' porque después de regar, nunca será 'hoy'.
+        }
 
         mostrarToast("🌿 ¡Planta regada con éxito!");
       });
@@ -364,7 +300,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const btnVerDetalle = tarjeta.querySelector(".btn-ver-detalle");
       btnVerDetalle.addEventListener("click", () => {
         const id = btnVerDetalle.dataset.id;
-        window.location.href = `/home/detail/?id=${id}`;
+        window.location.href = `/detail?id=${id}`;
       });
 
       const btnEliminar = tarjeta.querySelector(".btn-eliminar");
@@ -385,6 +321,45 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.error("Error al cargar plantas:", err);
     alert("No se pudieron cargar las plantas. Verificá tu conexión o el token.");
   }
+
+  // --- LÓGICA DE BOTONES DE NAVEGACIÓN (MOVIDA AQUÍ PARA EVITAR CONFLICTOS) ---
+
+  const btnLogout = document.getElementById("btnLogout");
+  if (btnLogout) {
+    btnLogout.addEventListener("click", (e) => {
+      e.preventDefault(); // evita navegación por el href
+      mostrarToast("👋 ¡Sesión cerrada! ¡Hasta luego!");
+      setTimeout(() => logoutUsuario(), 2000);
+    });
+  }
+
+  const btnGoogleCalendar = document.getElementById("btnGoogleCalendar");
+  if (btnGoogleCalendar) {
+    btnGoogleCalendar.addEventListener("click", (e) => {
+      e.preventDefault();
+      iniciarVinculacionGoogle();
+    });
+  }
+
+  const btnGoogleDisconnect = document.getElementById("btnGoogleDisconnect");
+  if (btnGoogleDisconnect) {
+    btnGoogleDisconnect.addEventListener("click", async (e) => {
+      e.preventDefault();
+      if (!confirm("¿Estás seguro de que querés desvincular tu calendario? Los eventos ya creados no se eliminarán.")) {
+        return;
+      }
+      try {
+        const res = await fetchProtegido('/api/google-calendar-disconnect/', { method: 'POST' });
+        if (!res.ok) throw new Error('Error en el servidor');
+        mostrarToast("✅ Calendario desvinculado con éxito.", "success");
+        setTimeout(() => window.location.reload(), 1500); // Recargamos para refrescar el estado
+      } catch (error) {
+        mostrarToast("❌ No se pudo desvincular el calendario.", "danger");
+      }
+    });
+  }
+
+  checkGoogleCalendarStatus();
 });
 
 
@@ -419,11 +394,18 @@ async function regarPlanta(id) {
       method: "POST"
     });
 
-    if (!res.ok) throw new Error("Error al regar la planta");
+    if (!res.ok) {
+      throw new Error("Error en la respuesta del servidor al regar la planta");
+    }
+    // Devolvemos true si el riego fue exitoso.
+    return true;
   } catch (error) {
     console.error("❌ Error al regar planta:", error);
     mostrarToast("No se pudo regar la planta.");
+    return false;
   }
-};
+}
 
-
+document.getElementById("btnAgregarPlanta").addEventListener("click", () => {
+  window.location.href = "/add/";
+});

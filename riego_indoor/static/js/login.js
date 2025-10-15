@@ -24,7 +24,7 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
      const { access, refresh } = await loginUsuario(username, password);
      mostrarToast("Login exitoso, ingresando...🌿");
      setTimeout(() => {
-        window.location.href = "/home/dashboard/"; // Redirige a la página principal
+        window.location.href = "/dashboard/"; // Redirige a la página principal
       }, 2500);     
      } catch (err) {
      mostrarToast("Usuario o contraseña incorrectos");
@@ -36,9 +36,10 @@ function mostrarToast(mensaje, tipo = "success") {
   const toastBody = document.getElementById("toast-body");
   const toast = document.getElementById("toast");
 
-  toastBody.textContent = mensaje;
-  toast.classList.remove("bg-success", "bg-danger", "bg-warning");
-  toast.classList.add(`bg-${tipo}`);
+  toastBody.textContent = mensaje;  toast.classList.remove("bg-success", "bg-danger", "bg-warning", "bg-violeta");
+
+  const claseBg = tipo === "success" ? "bg-violeta" : `bg-${tipo}`;
+  toast.classList.add(claseBg);
 
   // Inicializar y mostrar el toast
   const bsToast = new bootstrap.Toast(toast, { delay: 2000 });

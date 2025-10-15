@@ -1,147 +1,125 @@
-# notificaciones/signals.py
-from django.db.models.signals import post_save
+# filepath: c:\Users\LucaRodriguez\Desktop\Riego-Indoor\riego_indoor\notificaciones\signals.py
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
-from django.conf import settings
-
-from django.contrib.auth import get_user_model
+from plantas.models import Riego, Planta
+from .services.google_calendar import get_user_calendar_service
+from django.contrib.auth.models import User
 from .models import Profile
-
-User = get_user_model()
+from django.conf import settings
+from datetime import timedelta, datetime, time
 
 @receiver(post_save, sender=User)
-def create_or_update_profile_for_user(sender, instance, created, **kwargs):
+def create_or_update_profile(sender, instance, created, **kwargs):
+    if created:
+        Profile.objects.get_or_create(user=instance, defaults={'calendar_id': instance.email})
+
+def _update_or_create_next_watering_event(planta):
     """
-    Crea un Profile al crear el User y, si el user tiene email, lo setea en calendar_id
-    (solo si calendar_id está vacío, para no sobreescribir si luego el user lo cambia).
+    Función helper para crear o actualizar el evento del próximo riego.
+    - Si ya existe un evento, lo elimina.
+    - Crea un nuevo evento con la fecha actualizada.
+    - Guarda el ID del nuevo evento en la planta.
+    """
+    user = planta.usuario
+    
+    # 1. Verificar si el usuario ha vinculado su cuenta de Google
+    if not hasattr(user, 'profile') or not user.profile.google_access_token:
+        print(f"Usuario {user.username} no ha vinculado Google Calendar. No se crea evento.")
+        return
+
+    service = get_user_calendar_service(user)
+
+    # 2. Si ya existe un evento, lo eliminamos primero.
+    if planta.google_calendar_event_id:
+        try:
+            service.events().delete(calendarId='primary', eventId=planta.google_calendar_event_id).execute()
+            print(f"Evento anterior '{planta.google_calendar_event_id}' eliminado para la planta '{planta.nombre_personalizado}'.")
+        except Exception as e:
+            # Si el evento no se encuentra (ej: borrado manualmente por el usuario), no es un error crítico.
+            print(f"No se pudo eliminar el evento anterior '{planta.google_calendar_event_id}': {e}")
+
+    # 3. Obtener los cálculos de riego para saber la próxima fecha
+    calculos = planta.calculos_riego()
+    next_watering_date = calculos.get('next_watering_date')
+
+    if not next_watering_date:
+        print(f"No se pudo calcular la próxima fecha de riego para {planta.nombre_personalizado}.")
+        return
+
+    # 4. Preparar los datos del nuevo evento
+
+    # Hora del evento (ej: 9:00 AM). Se puede hacer configurable por usuario en el futuro.
+    event_time = time(9, 0)
+    start_datetime = datetime.combine(next_watering_date, event_time)
+    end_datetime = start_datetime + timedelta(minutes=30)
+
+    event = {
+        'summary': f'💧 Regar: {planta.nombre_personalizado}',
+        'description': (
+            f'¡Es hora de regar tu planta "{planta.nombre_personalizado}"!\n\n'
+            f'💧 Cantidad de agua recomendada: {calculos["recommended_water_ml"]} ml.\n'
+            f'🪴 Tipo de planta: {planta.tipo_planta}.'
+        ),
+        'start': {'dateTime': start_datetime.isoformat(), 'timeZone': settings.TIME_ZONE},
+        'end': {'dateTime': end_datetime.isoformat(), 'timeZone': settings.TIME_ZONE},
+        'colorId': '9',  # 9 = Azul "Blueberry"
+        'reminders': {'useDefault': True},  # Usa las notificaciones por defecto del usuario
+    }
+
+    # 5. Insertar el evento y guardar su ID
+    try:
+        created_event = service.events().insert(calendarId='primary', body=event).execute()
+        # Usamos update() en lugar de save() para evitar un ciclo de señales post_save.
+        Planta.objects.filter(pk=planta.pk).update(google_calendar_event_id=created_event['id'])
+        # Actualizamos el objeto en memoria para que tenga el ID correcto si se usa después.
+        planta.refresh_from_db()
+        print(f"Evento de riego creado/actualizado para '{planta.nombre_personalizado}' el {next_watering_date}. ID: {created_event['id']}")
+    except Exception as e:
+        print(f"Error al crear el evento de Google Calendar para '{planta.nombre_personalizado}': {e}")
+        # Nos aseguramos de que no quede un ID viejo si la creación falla
+        Planta.objects.filter(pk=planta.pk).update(google_calendar_event_id=None)
+        planta.refresh_from_db()
+
+@receiver(post_save, sender=Planta)
+def update_event_on_planta_save(sender, instance, created, **kwargs):
+    """
+    Cuando se crea o actualiza una planta, se crea/actualiza el evento
+    del calendario para el próximo riego.
+    - `created=True`: Se ejecuta al crear una nueva planta.
+    - `created=False`: Se ejecuta al modificar una planta existente.
+    """
+    _update_or_create_next_watering_event(instance)
+
+@receiver(post_save, sender=Riego)
+def create_event_on_riego_save(sender, instance, created, **kwargs):
+    """
+    Cuando se registra un nuevo riego, se actualiza el evento
+    del calendario a la siguiente fecha de riego calculada.
     """
     if created:
-        Profile.objects.create(user=instance, calendar_id=(instance.email or '').strip() or None)
-    else:
-        # si existe pero no tiene calendar_id y el user tiene email, lo completamos
-        try:
-            profile = instance.profile
-            if not profile.calendar_id and instance.email:
-                profile.calendar_id = instance.email.strip()
-                profile.save(update_fields=['calendar_id'])
-        except Profile.DoesNotExist:
-            # por si no existiera por cualquier razón, lo creamos
-            Profile.objects.create(user=instance, calendar_id=(instance.email or '').strip() or None)
+        _update_or_create_next_watering_event(instance.planta)
 
+@receiver(post_delete, sender=Planta)
+def delete_event_on_planta_delete(sender, instance, **kwargs):
+    """
+    Cuando se elimina una planta, también se elimina su evento
+    asociado del Google Calendar.
+    """
+    planta = instance
+    user = planta.usuario
 
+    # 1. Verificar si hay un evento para eliminar y si el usuario tiene el calendario vinculado.
+    if not planta.google_calendar_event_id:
+        return
 
+    if not hasattr(user, 'profile') or not user.profile.google_access_token:
+        return
 
-
-
-
-
-
-
-
-
-# # notificaciones/signals.py
-# from django.db.models.signals import post_save
-# from django.dispatch import receiver
-# from django.contrib.auth import get_user_model
-# from django.db import transaction
-# from datetime import timedelta
-# from django.utils import timezone
-
-# from .models import Profile  # si Profile está en notificaciones.models
-# # Si Profile está en otra app, importalo desde esa app: from users.models import Profile
-# from plantas.models import Riego, Planta  # ajustá 'riego_app' al nombre real de tu app de riego
-# from .services.google_calendar import (
-#     ensure_timezone,
-#     create_calendar_event,
-#     DEFAULT_TZ,
-# )
-
-# User = get_user_model()
-
-# # 1) Signal para crear/actualizar Profile cuando se crea un User
-# @receiver(post_save, sender=User)
-# def create_or_update_profile_for_user(sender, instance, created, **kwargs):
-#     """
-#     Cuando se crea un User, aseguramos que exista Profile y,
-#     si el User tiene email, lo usamos como calendar_id por defecto.
-#     """
-#     # Evitamos errores si Profile está en otra app
-#     try:
-#         profile, _ = Profile.objects.get_or_create(user=instance)
-#         if instance.email:
-#             # Sólo seteamos si no existe calendar_id (para no sobreescribir)
-#             if not profile.calendar_id:
-#                 profile.calendar_id = instance.email.strip()
-#                 profile.save(update_fields=['calendar_id'])
-#     except Exception as e:
-#         # No queremos romper la creación de usuarios si algo falla:
-#         # loguear en consola para debug
-#         print(f"[notificaciones] create_or_update_profile_for_user error: {e}")
-
-
-# # 2) Signal para reaccionar cuando se crea un Riego
-# @receiver(post_save, sender=Riego)
-# def on_riego_created(sender, instance: Riego, created, **kwargs):
-#     """
-#     - Actualiza Planta.fecha_ultimo_riego con la fecha del Riego.
-#     - Calcula proximo riego (usando planta.calculos_riego()).
-#     - Si existe calendar_id para el owner, crea un evento en Google Calendar.
-#     """
-#     if not created:
-#         # Sólo actuamos en creación, no en updates
-#         return
-
-#     planta = instance.planta
-#     if planta is None:
-#         return
-
-#     # 1) Actualizar fecha_ultimo_riego en Planta (no interferimos con serializers existentes)
-#     try:
-#         planta.fecha_ultimo_riego = instance.fecha
-#         planta.save(update_fields=['fecha_ultimo_riego'])
-#     except Exception as e:
-#         print(f"[notificaciones] Error guardando fecha_ultimo_riego: {e}")
-
-#     # 2) Obtener calendar_id (Profile.calendar_id preferido; fallback a owner.email)
-#     calendar_id = None
-#     owner = getattr(planta, 'usuario', None) or getattr(planta, 'owner', None) or None
-#     if owner:
-#         profile = getattr(owner, 'profile', None)
-#         if profile and getattr(profile, 'calendar_id', None):
-#             calendar_id = profile.calendar_id
-#         elif getattr(owner, 'email', None):
-#             calendar_id = owner.email
-
-#     # 3) Calcular próxima fecha de riego con la función existente de Planta
-#     next_dt = None
-#     try:
-#         calc = planta.calculos_riego()
-#         next_dt = calc.get('next_watering_date') or calc.get('next_riego') or None
-#     except Exception as e:
-#         print(f"[notificaciones] Error calculando próximo riego: {e}")
-#         next_dt = None
-
-#     # 4) Si tenemos calendar_id y next_dt, crear evento en Google Calendar
-#     if calendar_id and next_dt:
-#         try:
-#             start_dt = ensure_timezone(next_dt, DEFAULT_TZ)
-#             end_dt = start_dt + timedelta(minutes=20)  # duración por defecto
-#             summary = f"Recordatorio de riego: {planta.nombre_personalizado or planta.nombre or 'Planta'}"
-#             description = (
-#                 f"Recordatorio automático generado por Riego Indoor.\n"
-#                 f"Planta: {planta.nombre_personalizado or planta.nombre}\n"
-#                 f"Último riego: {instance.fecha}\n"
-#                 f"Cantidad anterior: {instance.cantidad_agua_ml} ml"
-#             )
-
-#             event = create_calendar_event(
-#                 calendar_id=calendar_id,
-#                 summary=summary,
-#                 start_dt=start_dt,
-#                 end_dt=end_dt,
-#                 description=description,
-#             )
-#             print(f"[notificaciones] Evento creado en Google Calendar: {event.get('htmlLink')}")
-
-#         except Exception as e:
-#             # No rompemos la creación del riego por un fallo externo
-#             print(f"[notificaciones] Error creando evento en Google Calendar: {e}")
+    # 2. Intentar eliminar el evento del calendario.
+    try:
+        service = get_user_calendar_service(user)
+        service.events().delete(calendarId='primary', eventId=planta.google_calendar_event_id).execute()
+        print(f"Evento '{planta.google_calendar_event_id}' eliminado del calendario para la planta '{planta.nombre_personalizado}' que fue borrada.")
+    except Exception as e:
+        # Si el evento ya no existe en Google Calendar, no es un error crítico.
+        print(f"No se pudo eliminar el evento '{planta.google_calendar_event_id}' del calendario (puede que ya haya sido borrado): {e}")

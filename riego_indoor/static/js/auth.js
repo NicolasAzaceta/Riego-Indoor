@@ -1,6 +1,6 @@
 // ✅ Login: obtiene access y refresh
 export async function loginUsuario(username, password) {
-  const response = await fetch("http://127.0.0.1:8000/api/auth/token/", {
+  const response = await fetch("/api/auth/token/", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password })
@@ -18,7 +18,7 @@ export async function loginUsuario(username, password) {
 export async function refreshToken() {
   const refresh = localStorage.getItem("refresh");
 
-  const response = await fetch("http://127.0.0.1:8000/api/auth/token/refresh/", {
+  const response = await fetch("/api/auth/token/refresh/", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ refresh })
@@ -51,12 +51,19 @@ export async function obtenerTokenValido() {
 export function logoutUsuario() {
   localStorage.removeItem("access");
   localStorage.removeItem("refresh");
-  window.location.href = "/home/";
+  window.location.href = "/login/";
 }
 
 // ✅ Fetch con token: realiza peticiones autenticadas
 export async function fetchProtegido(url, options = {}) {
   let token = localStorage.getItem("access");
+  const refresh = localStorage.getItem("refresh");
+
+  // Si no hay tokens, no tiene sentido continuar. Redirigir al login.
+  if (!token || !refresh) {
+    logoutUsuario();
+    return new Response(null, { status: 401, statusText: "No hay tokens, cerrando sesión." });
+  }
 
   let response = await fetch(url, {
     ...options,

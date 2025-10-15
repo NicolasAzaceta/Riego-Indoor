@@ -2,6 +2,8 @@ from pathlib import Path
 from datetime import timedelta
 import os
 
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -31,7 +33,7 @@ SECRET_KEY = 'django-insecure-f+$0(&tfu@&eqe0e=0nk5w75won^6r*__a4=c3e4y_9@t(jt03
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -51,7 +53,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -61,7 +62,11 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# Para desarrollo, permitimos todos los orígenes.
+# En producción, esto debería cambiarse a CORS_ALLOWED_ORIGINS con tu dominio.
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
 
 ROOT_URLCONF = 'riego_indoor.urls'
 
@@ -170,4 +175,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 #STATICFILES_DIRS = [BASE_DIR / 'users' / 'static']
 
-LOGIN_REDIRECT_URL = '/dashboard/'
+LOGIN_REDIRECT_URL = '/home/dashboard/'
+
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
+GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
+
+GOOGLE_MAPS_API_KEY = config('GOOGLE_MAPS_API_KEY')

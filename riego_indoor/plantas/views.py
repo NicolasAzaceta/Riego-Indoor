@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 from .models import Planta, Riego
 from .serializers import PlantaSerializer, RiegoSerializer, RegisterSerializer
 from .permissions import IsOwner
+from notificaciones.services.google_calendar import get_user_calendar_service
 
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
@@ -14,19 +15,27 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, authenticate
+from django.conf import settings
+import requests
 
 
 def home(request):
-    return render(request, 'login.html')
+    return render(request, 'home.html')
 
 def index_view(request):
-    return render(request, 'index.html')
+    return render(request, 'index.html', {'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY})
 
 def add_view(request):
     return render(request, 'add-plants.html')
 
 def detail_view(request):
     return render(request, 'detail.html')
+
+def login_view(request):
+    return render(request, 'login.html')
+
+def register_view(request):
+    return render(request, 'register.html')
 
 # -------- Registro de usuarios --------
 from rest_framework.views import APIView
@@ -41,6 +50,98 @@ class RegisterView(APIView):
         user = serializer.save()
         return Response({"id": user.id, "username": user.username}, status=status.HTTP_201_CREATED)
 
+class GoogleCalendarStatusView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """
+        Verifica si el usuario actual ha vinculado su cuenta de Google Calendar.
+        """
+        user = request.user
+        is_linked = False
+        if hasattr(user, 'profile') and user.profile.google_access_token:
+            is_linked = True
+        return Response({'is_linked': is_linked})
+
+class GoogleCalendarDisconnectView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        """
+        Desvincula la cuenta de Google Calendar del usuario, eliminando sus credenciales.
+        """
+        user = request.user
+        if not hasattr(user, 'profile'):
+            return Response({"error": "Perfil no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+        profile = user.profile
+
+        # 1. Si el usuario tiene un token, intentar eliminar los eventos existentes ANTES de borrar el token.
+        if profile.google_access_token:
+            try:
+                service = get_user_calendar_service(user)
+                plantas_con_evento = Planta.objects.filter(usuario=user, google_calendar_event_id__isnull=False)
+                
+                for planta in plantas_con_evento:
+                    try:
+                        service.events().delete(calendarId='primary', eventId=planta.google_calendar_event_id).execute()
+                        print(f"Evento '{planta.google_calendar_event_id}' de la planta '{planta.nombre_personalizado}' eliminado por desvinculación.")
+                    except Exception as e:
+                        print(f"No se pudo eliminar el evento '{planta.google_calendar_event_id}' (puede que ya no exista): {e}")
+            except Exception as e:
+                # Si falla la obtención del servicio (ej. token expirado), solo lo informamos y continuamos.
+                print(f"No se pudieron eliminar los eventos del calendario al desvincular (posiblemente el token ya no era válido): {e}")
+
+        # 2. Borrar los tokens y la información de Google del perfil.
+        profile.google_access_token = None
+        profile.google_refresh_token = None
+        profile.google_token_expiry = None
+        profile.save()
+        return Response({"message": "Calendario desvinculado con éxito. Los eventos asociados han sido eliminados."}, status=status.HTTP_200_OK)
+
+class WeatherDataView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """
+        Obtiene datos del clima para una localidad usando la Weather API de Google.
+        Espera un parámetro en la URL: /api/weather/?location=Cordoba,Argentina
+        """
+        location = request.query_params.get('location')
+        if not location:
+            return Response({"error": "La localidad es requerida."}, status=status.HTTP_400_BAD_REQUEST)
+
+        api_key = settings.GOOGLE_MAPS_API_KEY
+        # Primero, necesitamos geocodificar la localidad para obtener latitud y longitud
+        geocode_url = f"https://maps.googleapis.com/maps/api/geocode/json?address={location}&key={api_key}"
+        
+        try:
+            geocode_response = requests.get(geocode_url)
+            geocode_response.raise_for_status()  # Lanza un error si el status no es 2xx
+            geocode_data = geocode_response.json()
+            if not geocode_data.get('results'):
+                return Response({"error": "No se pudo encontrar la localidad."}, status=status.HTTP_404_NOT_FOUND)
+        except requests.exceptions.RequestException as e:
+            return Response({"error": f"Error al contactar Google Geocoding API: {e}"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        except ValueError: # JSONDecodeError hereda de ValueError
+            return Response({"error": "Respuesta inválida de Google Geocoding API. Verificá la API Key y que la API esté habilitada."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Extraemos latitud y longitud de la respuesta de Geocoding
+        location_coords = geocode_data['results'][0]['geometry']['location']
+        lat = location_coords.get('lat')
+        lng = location_coords.get('lng')
+        
+        # Ahora pedimos el clima para esas coordenadas
+        weather_url = f"https://weather.googleapis.com/v1/currentConditions:lookup?key={api_key}&location.latitude={lat}&location.longitude={lng}"
+        try:
+            # La llamada correcta es un GET con los parámetros en la URL
+            weather_response = requests.get(weather_url)
+            weather_response.raise_for_status()
+            return Response(weather_response.json(), status=weather_response.status_code)
+        except requests.exceptions.RequestException as e:
+            return Response({"error": f"Error al contactar Google Weather API: {e}"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        except ValueError:
+            return Response({"error": "Respuesta inválida de Google Weather API. Verificá la API Key y que la API esté habilitada."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # -------- Plantas --------
 class PlantaViewSet(viewsets.ModelViewSet):
@@ -59,6 +160,20 @@ class PlantaViewSet(viewsets.ModelViewSet):
         planta = self.get_object()
         datos = planta.calculos_riego()
         return Response(datos)
+
+    @action(detail=True, methods=['get'])
+    def recalcular(self, request, pk=None):
+        """
+        Recalcula el estado de riego de una planta usando una temperatura externa.
+        Espera un parámetro: /api/plantas/{id}/recalcular/?temperatura=25
+        """
+        planta = self.get_object()
+        temperatura_str = request.query_params.get('temperatura')
+        if temperatura_str is None:
+            return Response({"error": "El parámetro 'temperatura' es requerido."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        datos_recalculados = planta.calculos_riego(temperatura_externa=float(temperatura_str))
+        return Response(datos_recalculados)
 
     @action(detail=True, methods=['post'])
     def regar(self, request, pk=None):

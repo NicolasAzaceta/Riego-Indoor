@@ -7,11 +7,11 @@ body {
   padding: 0;
   /* background-color: #f4f6f8;
   color: #333; */
-  background: var(--fondo-gradiente3);
-  color: var(--color-texto-principal);
+  background: #343a40; /* Gris plomo oscuro para todos los fondos */
+  color: #f8f9fa; /* Texto claro para que sea legible en fondo oscuro */
 }
 .card-titulo {
-  background-color: var(--color-beige-suave);
+  background-color: #e9ecef; /* Gris claro, igual que las otras tarjetas */
   color: var(--color-texto-principal);
   padding: 1.2rem 2rem 0.4rem 2rem; /* arriba, derecha, abajo, izquierda */
   margin: 1rem 0;
@@ -32,22 +32,6 @@ body {
 }
 .btn-success:hover {
   background-color: var(--color-boton-primario-hover);
-}
-
-.btn-regar, .btn-ver-detalle {
-  /* box-shadow: 0 0 0.75rem 0.2rem rgba(13, 110, 253, 0.25); sombra azul */
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
-}
-
-.btn-ver-detalle:hover {
-  box-shadow: 0 0 0.7rem 0.4rem rgba(13, 110, 253, 0.35);
-  background-color: transparent;
-  color: #0d6efd;
-  border-color: #0d6efd;
-}
-
-.btn-regar:hover {
-  box-shadow: 0 0 0.7rem 0.4rem rgba(13, 110, 253, 0.35);
 }
 
 /* header, nav {
@@ -95,8 +79,9 @@ button:hover {
   max-width: 80vw;
 }
 
+/* Estilos para el posicionamiento del botón flotante y centrado */
 .boton-flotante-centro {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: box-shadow 0.2s ease, color 0.2s ease-out;
   position: fixed;
   bottom: 1rem;
   left: 50%;
@@ -105,26 +90,71 @@ button:hover {
   padding: 0.4rem 1.5rem;
   font-size: 1rem;
   border-radius: 0.5rem;
-  background-color: var(--color-boton-primario);
+  background-color: #6f42c1; /* Violeta */
   color: white;
   border: none;
-  /* cursor: pointer; */
+  overflow: hidden; /* Necesario para la animación */
+  z-index: 9999;
 }
-.boton-flotante-centro:hover {
-  transform: translateX(-50%) scale(1.03);
-  background-color: var(--color-boton-primario) !important;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-} 
 
+.boton-flotante-centro::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: #9ACD32; /* Verde lima para el hover */
+  transition: left 0.2s ease-out;
+  z-index: -1;
+}
+
+.boton-flotante-centro:hover {
+  transform: translateX(-50%);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  color: #212529; /* Texto oscuro sobre el fondo verde */
+  border-color: #82b42b; /* Borde verde oscuro para consistencia */
+}
+
+.boton-flotante-centro:hover::before {
+  left: 0; /* Desliza el fondo para rellenar el botón */
+}
+
+/* Estilos para el botón de eliminar, incluyendo el hover animado */
 .btn-eliminar {
   position: absolute;
-  top: 0.7rem;
-  right: 1rem;
+  top: 1rem; /* Ajustado para simetría */
+  right: 1rem; /* Ajustado para simetría */
   z-index: 10;
-  padding: 0.4rem 0.6rem;
+  padding: 0.4rem 0.6rem; /* Mantenemos el padding original */
   font-size: 0.9rem;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.2s ease, color 0.2s ease-out; /* Animación más rápida */
+  overflow: hidden; /* Necesario para la animación */  
+  background-color: transparent; /* Aseguramos fondo transparente */
+  border: 2px solid #dc3545; /* Borde rojo */
+  color: #dc3545; /* Ícono rojo */
+}
+
+.btn-eliminar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: #dc3545; /* Color de relleno rojo */
+  transition: left 0.2s ease-out; /* Animación más rápida */
+  z-index: -1; /* Detrás del ícono */
+}
+
+.btn-eliminar:hover {
+  color: white; /* Cambiamos el color del ícono a blanco */
+  border-color: #dc3545; /* Mantenemos el borde rojo */
+}
+
+.btn-eliminar:hover::before {
+  left: 0; /* Deslizamos el fondo */
 }
 
 /* .btn-eliminar {
@@ -145,13 +175,19 @@ button:hover {
   padding: 2rem;
   margin: 1rem;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  background-color: var(--color-beige-suave);
+  background-color: #e9ecef; /* Gris claro para todas las tarjetas */
   /* overflow: visible; */
 }
 
 .card:hover {
   transform: scale(1.05);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+/* Anulamos la animación de hover para la tarjeta de login/bienvenida */
+.card-login:hover {
+  transform: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15); /* Mantenemos la sombra original */
 }
 
 .animar-entrada {
@@ -261,22 +297,24 @@ button:hover {
 }
 
 .modal-content {
-  background-color: var(--color-beige-suave);
+  background-color: #e9ecef; /* Gris claro para modales */
 }
 
 .list-group-item {
-  background-color: var(--color-beige-suave);
+  background-color: #e9ecef; /* Gris claro para items de lista */
   border: none;
   border-bottom: 1px solid rgba(0,0,0,0.1);
+  color: var(--color-texto-principal); /* Texto oscuro para tarjetas claras */
 }
 
 #nombre, #tipo, #tamano, #maceta, #ultimo_riego {
-  background-color: var(--color-beige-suave);
+  background-color: #e9ecef; /* Gris claro para inputs */
+  color: var(--color-texto-principal); /* Texto oscuro para inputs */
 }
 
 input.form-control:-webkit-autofill {
-  background-color: var(--color-beige-suave) !important;
-  -webkit-box-shadow: 0 0 0px 1000px var(--color-beige-suave) inset;
+  background-color: #e9ecef !important;
+  -webkit-box-shadow: 0 0 0px 1000px #e9ecef inset;
   color: var(--color-texto-principal) !important;
 }
 
@@ -322,48 +360,8 @@ input.form-control:-webkit-autofill {
   border-color: var(--color-beige-suave);
 }
 
-.dropdown-menu {
-  background-color: var(--color-beige-suave); /* mismo color que la tarjeta */
-  border: none;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.container-btn-add {
-  position: relative;
-  width: 100%;
-  height: 0;
-  border-radius: 30%;
-}
-
 i.bi {
   font-style: normal;
-}
-
-.btn-agregar-flotante {
-  font-family: 'Segoe UI', sans-serif !important;
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  /* width: 148px;
-  height: 48px; */
-  /* background-color: #198754; verde institucional */
-  background-color: var(--color-beige-suave);
-  /* color: white; */
-  /* border: none; */
-  font-size: 1.2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  z-index: 1000;
-}
-
-.btn-agregar-flotante:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
-  /* background-color: #157347; verde más oscuro */
 }
 
 @keyframes fadeIn {
@@ -371,18 +369,326 @@ i.bi {
   to { opacity: 1; transform: scale(1); }
 }
 
-.btn-agregar-flotante {
-  animation: fadeIn 0.4s ease-out;
+.dashboard-container {
+  --bs-gutter-x: 0rem !important; /* elimina espacio horizontal entre columnas */
 }
 
-.card-login {
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-  transition: none !important;
-  transform: none !important;
-}
-.card-login:hover {
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); /* misma sombra, sin cambio */
+.sidebar-title {
+  cursor: pointer;
+  user-select: none; /* Evita que el texto se seleccione al hacer clic */
 }
 
+/* --- Nuevo Estilo de Botón Violeta con Hover --- */
+.btn-violeta-outline {
+  position: relative; /* Necesario para el pseudo-elemento */
+  overflow: hidden;  /* Oculta el pseudo-elemento fuera del botón */
+  border: 2px solid #6f42c1; /* Color violeta de Bootstrap */
+  color: #6f42c1;
+  background-color: transparent;
+  transition: color 0.2s ease-out; /* Animación más rápida */
+  z-index: 1; /* Asegura que el texto esté por encima */
+}
 
+.btn-violeta-outline::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%; /* Empieza fuera, a la izquierda */
+  width: 100%;
+  height: 100%;
+  background-color: #6f42c1; /* Color de relleno */
+  transition: left 0.2s ease-out; /* Animación de deslizamiento más rápida */
+  z-index: -1; /* Se posiciona detrás del texto */
+}
 
+.btn-violeta-outline:hover {
+  color: white; /* Cambia el color del texto a blanco */
+  border-color: #6f42c1; /* Mantenemos el borde violeta en el hover */
+}
+
+.btn-violeta-outline:hover::before {
+  left: 0; /* Desliza el fondo para rellenar el botón */
+}
+
+/* --- Estilos para páginas con contenido centrado verticalmente (como home.html) --- */
+/*
+  Para usar, agregar la clase 'page-centered' al body y 'main-container'
+  al div que debe ocupar el espacio restante.
+*/
+html:has(body.page-centered),
+body.page-centered {
+  height: 100%;
+  margin: 0;
+}
+body.page-centered {
+  display: flex;
+  flex-direction: column;
+}
+.page-centered .main-container {
+  flex-grow: 1;
+}
+
+/* --- Nuevo Estilo de Botón Violeta Sólido con Hover Deslizante --- */
+.btn-violeta-solid {
+  position: relative; /* Necesario para el pseudo-elemento */
+  overflow: hidden;  /* Oculta el pseudo-elemento fuera del botón */
+  background-color: #6f42c1; /* Color violeta de Bootstrap */
+  color: white;
+  border-color: #6f42c1;
+  transition: color 0.3s ease-out;
+  z-index: 1; /* Asegura que el contenido esté por encima del ::before */
+}
+
+.btn-violeta-solid::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%; /* Empieza fuera, a la izquierda */
+  width: 100%;
+  height: 100%;
+  background-color: #59359a; /* Color de relleno (violeta más oscuro) */
+  transition: left 0.3s ease-out; /* Animación de deslizamiento */
+  z-index: -1; /* Se posiciona detrás del contenido del botón */
+}
+
+.btn-violeta-solid:hover {
+  color: white;
+  border-color: #59359a; /* Actualizamos el borde para que coincida */
+}
+
+.btn-violeta-solid:hover::before {
+  left: 0; /* Desliza el fondo para rellenar el botón */
+}
+
+/* --- Nuevo Estilo de Botón Lima con Hover Violeta --- */
+.btn-lima-hover-violeta {
+  position: relative;
+  overflow: hidden;
+  background-color: #9ACD32; /* Verde lima (YellowGreen) */
+  color: #212529; /* Texto oscuro para mejor contraste */
+  border: 2px solid #212529; /* Borde del mismo color que el texto */
+  transition: color 0.3s ease-out;
+  z-index: 1;
+}
+
+.btn-lima-hover-violeta::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: #6f42c1; /* Violeta de los otros botones */
+  transition: left 0.3s ease-out;
+  z-index: -1;
+}
+
+.btn-lima-hover-violeta:hover {
+  color: white; /* El texto cambia a blanco sobre el fondo violeta */
+  border-color: #59359a; /* Borde violeta oscuro para consistencia */
+}
+
+.btn-lima-hover-violeta:hover::before {
+  left: 0;
+}
+
+/* --- Nuevo Estilo de Botón Celeste Outline --- */
+.btn-celeste-outline {
+  position: relative;
+  overflow: hidden;
+  border: 2px solid #0dcaf0; /* Celeste de Bootstrap (info) */
+  color: #0dcaf0;
+  background-color: transparent;
+  transition: color 0.2s ease-out; /* Animación más rápida */
+  z-index: 1;
+}
+
+.btn-celeste-outline::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: #0dcaf0; /* Color de relleno */
+  transition: left 0.2s ease-out; /* Animación más rápida */
+  z-index: -1;
+}
+
+.btn-celeste-outline:hover {
+  color: white; /* Texto blanco sobre el fondo celeste */
+  border-color: #0dcaf0; /* Mantenemos el color del borde en hover */
+}
+
+.btn-celeste-outline:hover::before {
+  left: 0;
+}
+
+/* --- Nuevo Estilo de Botón Rojo Outline --- */
+.btn-rojo-outline {
+  position: relative;
+  overflow: hidden;
+  border: 2px solid #dc3545; /* Rojo de Bootstrap (danger) */
+  color: #dc3545;
+  background-color: transparent;
+  transition: color 0.3s ease-out;
+  z-index: 1;
+}
+
+.btn-rojo-outline::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: #dc3545; /* Color de relleno */
+  transition: left 0.3s ease-out;
+  z-index: -1;
+}
+
+.btn-rojo-outline:hover {
+  color: white; /* Texto blanco sobre el fondo rojo */
+  border-color: #dc3545;
+}
+
+.btn-rojo-outline:hover::before {
+  left: 0;
+}
+
+/* --- Nuevo Estilo para Toasts Violeta --- */
+.bg-violeta {
+  background-color: #6f42c1 !important; /* Violeta de Bootstrap con !important para sobreescribir */
+}
+
+/* --- Estilos para el Sidebar Violeta --- */
+#sidebar {
+  background-color: #6f42c1 !important; /* Forzamos el fondo violeta sobre bg-light */
+  color: #f8f9fa; /* Texto claro para todo el contenido */
+}
+
+#sidebar .sidebar-title {
+  color: white; /* Títulos en blanco para que resalten */
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+
+#sidebar .sidebar-title:hover {
+  color: #f8f9fa; /* Un blanco un poco más brillante */
+  transform: translateX(5px); /* Desplazamiento sutil a la derecha */
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+
+#sidebar .sidebar-title:hover {
+  color: #f8f9fa; /* Un blanco un poco más brillante */
+  transform: translateX(5px); /* Desplazamiento sutil a la derecha */
+}
+
+#sidebar .form-control {
+  background-color: rgba(255, 255, 255, 0.1); /* Fondo translúcido para inputs */
+  color: white;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+#sidebar .form-control::placeholder {
+  color: rgba(255, 255, 255, 0.6); /* Placeholder más suave */
+}
+
+#sidebar .form-control:focus {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  border-color: white;
+  box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.25);
+}
+
+/* --- Nuevo Estilo de Botón Violeta con Hover Verde --- */
+.btn-violeta-hover-verde {
+  position: relative;
+  overflow: hidden;
+  background-color: #6f42c1; /* Violeta de base */
+  color: white; /* Texto blanco */
+  border: 2px solid #59359a; /* Borde violeta oscuro */
+  transition: color 0.3s ease-out;
+  z-index: 1;
+}
+
+.btn-violeta-hover-verde::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: #9ACD32; /* Verde lima para el hover */
+  transition: left 0.3s ease-out;
+  z-index: -1;
+}
+
+.btn-violeta-hover-verde:hover {
+  color: #212529; /* Texto oscuro sobre el fondo verde */
+  border-color: #82b42b; /* Borde verde oscuro para consistencia */
+}
+
+.btn-violeta-hover-verde:hover::before {
+  left: 0;
+}
+
+/* --- Nuevo Estilo de Botón Blanco Outline para Sidebar --- */
+.btn-white-outline {
+  position: relative;
+  overflow: hidden;
+  border: 2px solid white;
+  color: white;
+  background-color: transparent;
+  transition: color 0.3s ease-out;
+  z-index: 1;
+}
+
+.btn-white-outline::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: #6f42c1; /* Relleno violeta */
+  transition: left 0.3s ease-out;
+  z-index: -1;
+}
+
+.btn-white-outline:hover {
+  color: white; /* Texto blanco sobre el fondo violeta */
+  border-color: white;
+}
+
+.btn-white-outline:hover::before {
+  left: 0;
+}
+
+/* --- Estilo de Hover para Dropdown Items --- */
+.dropdown-item {
+  position: relative;
+  overflow: hidden;
+  transition: color 0.3s ease-out;
+  z-index: 1;
+}
+
+.dropdown-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: #6f42c1; /* Violeta de Bootstrap */
+  transition: left 0.3s ease-out;
+  z-index: -1;
+}
+
+.dropdown-item:hover, .dropdown-item:focus {
+  color: white !important; /* Texto blanco sobre el fondo violeta */
+  background-color: transparent !important; /* Anula el fondo gris por defecto de Bootstrap */
+}
+
+.dropdown-item:hover::before, .dropdown-item:focus::before {
+  left: 0;
+}

@@ -1,17 +1,5 @@
 import { fetchProtegido } from "./auth.js";
-import { logoutUsuario } from './auth.js'; // si usás módulos
-
-document.addEventListener("DOMContentLoaded", () => {
-  const btnLogout = document.getElementById("btnLogout");
-  if (btnLogout) {
-    btnLogout.addEventListener("click", (e) => {
-      e.preventDefault();
-      console.log("Logout clickeado");
-      mostrarToast("👋 ¡Sesión cerrada! ¡Hasta luego!");
-      setTimeout(() => logoutUsuario(), 2000);
-    });
-  }
-});
+import { mostrarToast } from "./api.js";
 
 const params = new URLSearchParams(window.location.search);
 const plantId = params.get("id");
@@ -41,7 +29,7 @@ function configurarBotonVolver(idBoton, destino) {
   }
 }
 
-configurarBotonVolver("btn-volver", "/home/dashboard/");
+configurarBotonVolver("btn-volver", "/dashboard/");
 
 
 
@@ -83,8 +71,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const id = params.get("id");
 
   if (!id) {
-    alert("No se proporcionó un ID de planta. Redirigiendo al dashboard...");
-    window.location.href = "/home/dashboard/";
+    alert("No se proporcionó un ID de planta. Redirigiendo al panel...");
+    window.location.href = "/dashboard/";
     return;
   }
 
@@ -523,16 +511,3 @@ document.getElementById('guardarCambios').addEventListener('click', async () => 
     guardarCambios.textContent = 'Guardar cambios';
   }
 });
-
-function mostrarToast(mensaje, tipo = "success") {
-  const toastBody = document.getElementById("toast-body");
-  const toast = document.getElementById("toast");
-
-  toastBody.textContent = mensaje;
-  toast.classList.remove("bg-success", "bg-danger", "bg-warning");
-  toast.classList.add(`bg-${tipo}`);
-
-  // Inicializar y mostrar el toast
-  const bsToast = new bootstrap.Toast(toast, { delay: 2000 });
-  bsToast.show();
-};

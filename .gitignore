@@ -31,5 +31,6 @@ Thumbs.db
 .env 
 
 riego_indoor/credentials/*.json
+riego_indoor/notificaciones/services/*.json
 
 *.pyc
