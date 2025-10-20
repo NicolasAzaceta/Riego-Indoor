@@ -11,6 +11,7 @@ export async function loginUsuario(username, password) {
   const data = await response.json();
   localStorage.setItem("access", data.access);
   localStorage.setItem("refresh", data.refresh);
+  localStorage.setItem("username", username); // Guardamos el nombre de usuario
   return data;
 }
 
@@ -51,6 +52,7 @@ export async function obtenerTokenValido() {
 export function logoutUsuario() {
   localStorage.removeItem("access");
   localStorage.removeItem("refresh");
+  localStorage.removeItem("username"); // Limpiamos el nombre de usuario
   window.location.href = "/login/";
 }
 

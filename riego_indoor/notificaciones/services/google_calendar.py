@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from dateutil import parser as dateparser
 import pytz
 from django.conf import settings
-from google.oauth2 import service_account
+from google.oauth2 import service_account, credentials
 from googleapiclient.discovery import build
 
 from google_auth_oauthlib.flow import Flow
@@ -13,6 +13,7 @@ from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 from django.conf import settings
+from django.utils import timezone
 import json
 
 CLIENT_SECRET_FILE = 'notificaciones/services/client_secret.json'
@@ -31,14 +32,28 @@ def get_user_calendar_service(user):
         client_config = json.load(f)['web']
 
     profile = user.profile
-    credentials = Credentials(
+    creds = Credentials(
         token=profile.google_access_token,
         refresh_token=profile.google_refresh_token,
         token_uri='https://oauth2.googleapis.com/token',
         client_id=client_config.get('client_id'),
         client_secret=client_config.get('client_secret')
     )
-    return build('calendar', 'v3', credentials=credentials)
+
+    # --- LÓGICA CLAVE: Refrescar el token si es necesario ---
+    # Verificamos si el token ha expirado o está a punto de expirar (ej. en los próximos 5 minutos)
+    if creds.expired and creds.refresh_token:
+        print(f"Token de Google para '{user.username}' expirado. Refrescando...")
+        creds.refresh(credentials.Request())
+        # Guardamos los nuevos tokens en el perfil del usuario
+        profile.google_access_token = creds.token
+        # Google a veces devuelve un nuevo refresh_token, aunque no siempre.
+        if creds.refresh_token:
+            profile.google_refresh_token = creds.refresh_token
+        profile.google_token_expiry = creds.expiry
+        profile.save()
+
+    return build('calendar', 'v3', credentials=creds)
 
 
 SCOPES = ['https://www.googleapis.com/auth/calendar']

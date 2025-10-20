@@ -12,80 +12,105 @@
   <link rel="stylesheet" href="{% static 'css/variables.css' %}">
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 
-  <link rel="icon" type="image/png" href="{% static 'assets/img/planta.png' %}">
+  <script src="{% static 'js/google-places.js' %}" defer></script>
+  <link rel="icon" type="image/png" href="{% static 'assets/img/icono.png' %}">
   <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
   
 </head>
 <body>
   <nav class="navbar fixed-top mb-4" style="z-index:1050;">
   <div class="container-fluid d-flex justify-content-between align-items-center">
-    <span class="navbar-brand mb-0 h1">🌿 Riego Indoor</span>
-    
     <div class="d-flex align-items-center">
-      <!-- Botón para vincular Google Calendar -->
-      <a href="#" id="btnGoogleCalendar" class="btn btn-violeta-outline me-3">
+      <!-- Botón para colapsar/expandir el sidebar -->
+      <button id="sidebar-toggle" class="btn btn-white-outline me-3" data-bs-toggle="tooltip" data-bs-placement="right" title="Contraer">
+        <i class="bi bi-chevron-double-left"></i>
+      </button>
+      <!-- Contenedor del logo con posicionamiento relativo -->
+      <div style="position: relative; height: 30px;">
+        <!-- El logo se posiciona absolutamente, permitiendo que se desborde sin afectar la altura del nav -->
+        <img src="{% static 'assets/img/RIEGUMICONO.png' %}" alt="Logo Riegum" style="position: absolute; top: 50%; transform: translateY(-50%); width: 150px; height: auto;">
+      </div>
+    </div>
+    
+    <div id="nav-actions" class="d-flex align-items-center">
+      <!-- Contenedor para el indicador de temperatura manual -->
+      <div id="temp-externa-container" class="me-3"></div>
+      <!-- Contenedor para los botones de Google Calendar -->
+      <div id="google-calendar-container" class="me-3">
+        <!-- Botón para vincular (visible por defecto) -->
+        <a href="#" id="btnGoogleCalendar" class="btn btn-violeta-outline">
         <i class="bi bi-calendar-plus me-1"></i>Vincular Calendario
-      </a>
+        </a>
+        <!-- Menú desplegable para desvincular (oculto por defecto) -->
+        <div id="googleCalendarLinked" class="btn-group d-none">
+          <button type="button" class="btn btn-violeta-solid" disabled><i class="bi bi-check-circle-fill me-1"></i> Vinculado</button>
+          <button type="button" class="btn btn-violeta-outline dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="visually-hidden">Toggle Dropdown</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end"><li class="li-animado"><a class="dropdown-item" href="#" id="btnGoogleDisconnect"><i class="bi bi-calendar-x me-2"></i>Desvincular Calendario</a></li></ul>
+        </div>
+      </div>
       
       <!-- Menú de usuario -->
       <div class="dropdown">
         <button class="btn btn-violeta-outline dropdown-toggle d-flex align-items-center" type="button" id="menuUsuario" data-bs-toggle="dropdown" aria-expanded="false">
           <i class="bi bi-person-circle me-2"></i>
         </button>
-        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="menuUsuario">
-          <li><a class="dropdown-item d-none" href="#" id="btnGoogleDisconnect"><i class="bi bi-calendar-x me-2"></i>Desvincular Calendario</a></li>
-          <li><hr class="dropdown-divider d-none" id="google-divider"></li>
-          <li id="btnLogout"><a class="dropdown-item" href="javascript:void(0);">
-            <i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión
-          </a></li>
-        </ul>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="menuUsuario"><li class="li-animado"><a class="dropdown-item" id="btnLogout" href="javascript:void(0);"><i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión</a></li></ul>
       </div>
     </div>
   </div>
   </nav>
   <!-- Sidebar fijo -->
-<div id="sidebar" class="position-fixed top-0 start-0 h-100 p-4 shadow" style="width: 250px; z-index: 1000;">
-  <!-- Acordeón para las opciones del sidebar -->
-  <div class="mt-2 mb-4">
-    <h5 class="card-title pt-5 sidebar-title" data-bs-toggle="collapse" href="#collapseTemperatura" role="button" aria-expanded="false" aria-controls="collapseTemperatura">
-      🌡️ Temperatura
-    </h5>
-    <div class="collapse" id="collapseTemperatura">
-      <p class="small mt-2">- Si tus plantas son indoor, ingresá el promedio de temperatura.</p>
-      <div class="mb-3 pt-2">
-        <input type="number" class="form-control" id="inputTemperatura" placeholder="Ingresá la temperatura (°C)">
+<div id="sidebar" class="position-fixed top-0 start-0 h-100 shadow">
+  <div class="sidebar-content">
+    <div class="sidebar-inner-wrapper">
+      <h5 class="mb-4 sidebar-main-title">
+        <i class="bi bi-gear-fill me-2"></i>Configuraciones
+      </h5>
+      <!-- Acordeón exclusivo para las opciones del sidebar -->
+      <div id="accordionConfiguracion">
+        <div class="mb-4">
+          <h6 class="sidebar-subtitle collapsed" data-bs-toggle="collapse" href="#collapseTemperatura" role="button" aria-expanded="false" aria-controls="collapseTemperatura">
+            🌡️ Temperatura
+          </h6>
+          <div class="collapse" id="collapseTemperatura" data-bs-parent="#accordionConfiguracion">
+            <p class="small mt-2">- Si tus plantas son indoor, ingresá el promedio de temperatura.</p>
+            <div class="mb-3 pt-2">
+              <input type="number" class="form-control" id="inputTemperatura" placeholder="Temp promedio (°C)">
+            </div>
+            <button class="btn btn-white-outline w-100" id="btnRecalcularTemp">Usar Temperatura</button>
+          </div>
+        </div>
+        <div class="mt-4">
+          <h6 class="sidebar-subtitle collapsed" data-bs-toggle="collapse" href="#collapseClima" role="button" aria-expanded="false" aria-controls="collapseClima">
+            📅 Clima
+          </h6>
+          <div class="collapse" id="collapseClima" data-bs-parent="#accordionConfiguracion">
+            <p class="small mt-2">- Si tus plantas son de exterior, ingresá tu localidad.</p>
+            <div class="mb-3 pt-2">
+              <div class="input-group">
+                <input type="text" class="form-control" id="inputLocalidad" placeholder="Ingresá tu localidad">
+                <button class="btn btn-white-outline" type="button" id="btnBuscarLocalidad" title="Buscar sugerencias">
+                  <i class="bi bi-search"></i>
+                </button>
+              </div>
+            </div>
+            <button class="btn btn-white-outline w-100" id="btnRecalcularClima">Usar Clima Actual</button>
+          </div>
+        </div>
       </div>
-      <button class="btn btn-white-outline w-100" id="btnRecalcularTemp">Usar Temperatura</button>
-    </div>
-  </div>
-  <div class="mt-4">
-    <h5 class="card-title sidebar-title" data-bs-toggle="collapse" href="#collapseClima" role="button" aria-expanded="false" aria-controls="collapseClima">
-      📅 Clima
-    </h5>
-    <div class="collapse" id="collapseClima">
-      <p class="small mt-2">- Si tus plantas son de exterior, ingresá tu localidad.</p>
-      <div class="mb-3 pt-2">
-        <input type="text" class="form-control" id="inputLocalidad" placeholder="Ingresá tu localidad">
-      </div>
-      <button class="btn btn-white-outline w-100" id="btnRecalcularClima">Usar Clima Actual</button>
     </div>
   </div>
 </div>
 
-<div class="row dashboard-container"> 
-  <div class="col-2">
-  </div>
-  <div class="col-10 mt-4" >
-    
 <!-- Contenido principal desplazado -->
-<div id="main-content" class="mt-5" style="padding-bottom: 25px;">
-  <div class="container">
+<div id="main-content">
+  <div class="container-fluid mt-5 pt-4">
     <div class="card-titulo">
       <h2 class="mb-3">
-        <img src="/static/assets/img/planta.png" alt="Icono planta" style="width: 32px; height: 32px; margin-right: 8px; margin-bottom: 10px;">
-        Mis Plantas
-        <img src="/static/assets/img/planta.png" alt="Icono planta" style="width: 32px; height: 32px; margin-right: 8px; margin-bottom: 10px;">
-      </h2>
+        <img src="/static/assets/img/icono.png" alt="Icono planta" style="width: 60px; height: 60px; margin-bottom: 8px;">Mis Plantas
+        </h2>
     </div>
     <div id="plant-list" class="row gy-3"></div>
     </div>
@@ -101,8 +126,8 @@
             Esta acción no se puede deshacer.
           </div>
           <div class="modal-footer justify-content-end">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="button" class="btn btn-danger" id="btnConfirmarEliminar">Eliminar</button>
+            <button type="button" class="btn btn-violeta-outline" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-rojo-outline" id="btnConfirmarEliminar">Eliminar</button>
           </div>
         </div>
       </div>
@@ -117,46 +142,6 @@
       </div>
     </div>
   </div>
-</div>
-  {% comment %} <div class="container mx-1"  style="padding-bottom: 25px;">
-    
-    <div class="row">
-      <!-- Tarjeta lateral izquierda -->
-      <div class="col-md-3">
-        <div class="card shadow-sm">
-          <div class="card-body">
-            <h5 class="card-title">🌡️ Temperatura Indoor</h5>
-              <div class="mb-3">
-                <input type="number" class="form-control" id="inputTemperatura" placeholder="Ingresá la temperatura (°C)">
-              </div>
-            <button class="btn btn-success w-100" id="btnRecalcular">Recalcular Riegos</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-9">
-
-        <div class="card-titulo">
-          <h2 class="mb-4">
-            <img src="/static/assets/img/planta.png" alt="Icono planta" style="width: 32px; height: 32px; margin-right: 8px; margin-bottom: 10px;">
-            Mis Plantas
-            <img src="/static/assets/img/planta.png" alt="Icono planta" style="width: 32px; height: 32px; margin-right: 8px; margin-bottom: 10px;">
-          </h2>
-        </div>
-      
-      
-        <div id="plant-list" class="row gy-3"></div>
-        <div class="container-btn-add">
-          <button id="btnAgregarPlanta" class="btn btn-outline-success btn-agregar-flotante" title="Agregar planta">
-            <i class="bi bi-leaf me-2" style="font-size: 1.4rem;"></i> Agregar planta
-          </button>
-        </div>
-
-  
-        <div class="container">
-          <div class="row" id="plant-list"></div>
-        </div>
-      </div> {% endcomment %}
 
       <!-- Modal de confirmación -->
     <div class="modal fade" id="modalConfirmar" tabindex="-1" aria-labelledby="modalConfirmarLabel" aria-hidden="true">
@@ -202,5 +187,8 @@
 <button id="btnAgregarPlanta" class="btn btn-violeta-hover-verde shadow-lg" title="Agregar planta" style="position: fixed; bottom: 2rem; right: 2rem; z-index: 1030; display: flex; align-items: center; width: auto;">
     <i class="bi bi-leaf me-2"></i> <span>Agregar planta</span>
 </button>
+
+<!-- Contenedor para las sugerencias de autocompletado (movido aquí para un posicionamiento global) -->
+<div id="suggestions-wrapper" class="list-group"></div>
 
 </html>
