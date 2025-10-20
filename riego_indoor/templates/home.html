@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bienvenido a Riego Indoor</title>
+  <title>Bienvenido a Riegum</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 
   {% load static %}
   <link rel="stylesheet" href="{% static 'css/variables.css' %}">
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-  <link rel="icon" type="image/png" href="{% static 'assets/img/planta.png' %}">
+  <link rel="icon" type="image/png" href="{% static 'assets/img/icono.png' %}">
 
   <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 
@@ -20,7 +20,11 @@
   <!-- Navbar simple para la bienvenida -->
   <nav class="navbar">
     <div class="container-fluid">
-      <span class="navbar-brand mb-0 h1">🌿 Riego Indoor</span>
+      <!-- Contenedor del logo con posicionamiento relativo -->
+      <div style="position: relative; height: 30px;">
+        <!-- El logo se posiciona absolutamente, permitiendo que se desborde sin afectar la altura del nav -->
+        <img src="{% static 'assets/img/RIEGUMICONO.png' %}" alt="Logo Riegum" style="position: absolute; top: 50%; transform: translateY(-50%); width: 150px; height: auto;">
+      </div>
     </div>
   </nav>
 
@@ -40,7 +44,7 @@
         </lottie-player>
         <h1 class="card-title h2 mb-3">Tu asistente de riego inteligente</h1>
         <p class="card-text mb-4">
-          Con Riego Indoor, nunca más te olvidarás de regar tus plantas. Llevá un control detallado, calculá la cantidad de agua y la frecuencia ideal para cada una de ellas.
+          Con Riegum, nunca más te olvidarás de regar tus plantas. Llevá un control detallado, calculá la cantidad de agua y la frecuencia ideal para cada una de ellas.
         </p>
         <div class="d-grid gap-3">
           <a href="/register/" class="btn btn-violeta-outline btn-lg">
@@ -50,6 +54,7 @@
             <i class="bi bi-box-arrow-in-right me-2"></i>Ingresar
           </a>
         </div>
+        <p class="text-center small mt-4" style="color: #6f42c1;">Powered by LarIT</p>
       </div>
     </div>
 

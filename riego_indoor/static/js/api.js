@@ -1,5 +1,11 @@
-import { logoutUsuario } from './auth.js';
-import { fetchProtegido } from './auth.js';
+import { fetchProtegido, logoutUsuario as authLogout } from './auth.js';
+
+export function logoutUsuario() {
+  // Centralizamos la lógica de logout para asegurar que siempre redirija a la página de bienvenida.
+  // Ya no borramos la temperatura aquí, se asocia al usuario.
+  authLogout();
+  window.location.href = "/";
+}
 
 export function mostrarToast(mensaje, tipo = "success") {
   const toastBody = document.getElementById("toast-body");
@@ -49,72 +55,143 @@ export async function checkGoogleCalendarStatus() {
 
 function updateGoogleCalendarButton(isLinked) {
   const btnGoogleCalendar = document.getElementById("btnGoogleCalendar");
-  const btnGoogleDisconnect = document.getElementById("btnGoogleDisconnect");
-  const googleDivider = document.getElementById("google-divider");
+  const googleCalendarLinked = document.getElementById("googleCalendarLinked");
 
-  if (!btnGoogleCalendar || !btnGoogleDisconnect || !googleDivider) return;
+  if (!btnGoogleCalendar || !googleCalendarLinked) return;
 
   if (isLinked) {
-    // Botón principal: Mostrar como vinculado y deshabilitar
-    btnGoogleCalendar.classList.remove('btn-violeta-outline');
-    btnGoogleCalendar.classList.add('btn-violeta-solid'); // Cambia a violeta sólido
-    btnGoogleCalendar.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Vinculado';
-    btnGoogleCalendar.style.pointerEvents = 'none';
-    btnGoogleCalendar.setAttribute('disabled', 'disabled');
-
-    // Menú desplegable: Mostrar opción para desvincular
-    btnGoogleDisconnect.classList.remove('d-none');
-    googleDivider.classList.remove('d-none');
+    // Ocultar el botón de "Vincular" y mostrar el menú de "Vinculado"
+    btnGoogleCalendar.classList.add('d-none');
+    googleCalendarLinked.classList.remove('d-none');
   } else {
-    // Estado por defecto si no está vinculado
-    btnGoogleCalendar.classList.add('btn-violeta-outline');
-    btnGoogleCalendar.classList.remove('btn-violeta-solid');
-    btnGoogleCalendar.innerHTML = '<i class="bi bi-calendar-plus me-1"></i> Vincular Calendario';
-    btnGoogleCalendar.style.pointerEvents = 'auto';
-    btnGoogleCalendar.removeAttribute('disabled');
-
-    // Ocultar opción de desvincular
-    btnGoogleDisconnect.classList.add('d-none');
-    googleDivider.classList.add('d-none');
+    // Mostrar el botón de "Vincular" y ocultar el menú de "Vinculado"
+    btnGoogleCalendar.classList.remove('d-none');
+    googleCalendarLinked.classList.add('d-none');
   }
 }
 
-// Hacemos la función de inicialización global para que el script de Google Maps la encuentre.
-function initializeAutocomplete() { // Renombrada para mayor claridad
-  const inputLocalidad = document.getElementById("inputLocalidad");
-  console.log("✅ initializeAutocomplete called.");
-  console.log("inputLocalidad found:", !!inputLocalidad);
+function getTemperaturaKey() {
+  const username = localStorage.getItem('username');
+  if (!username) return null;
+  return `temperaturaManual_${username}`;
+}
 
-  // Verificamos si el objeto 'google' y sus componentes están disponibles
-  if (typeof google === 'undefined' || typeof google.maps === 'undefined' || typeof google.maps.places === 'undefined') {
-    console.error("❌ Google Maps API o la librería Places no se cargaron correctamente.");
-    console.error("Asegurate de que la API Key sea válida, la facturación esté habilitada y la 'Places API' esté activada en Google Cloud Console.");
-    return; // Salimos si la API no está lista
+function getClimaKey() {
+  const username = localStorage.getItem('username');
+  if (!username) return null;
+  return `climaGuardado_${username}`;
+}
+
+function actualizarDisplayTemperaturaExterna(data) {
+  const container = document.getElementById('temp-externa-container');
+  if (!container) return;
+
+  // Limpiamos el contenedor
+  container.innerHTML = '';
+
+  if (!data) {
+    return;
   }
 
-  if (inputLocalidad) {
-    console.log("✅ Inicializando autocompletado de Google Places...");
-    const autocomplete = new google.maps.places.Autocomplete(inputLocalidad, {
-      types: ['(cities)'], // Limita la búsqueda a ciudades
-      fields: ['formatted_address'] // Pedimos la dirección formateada para más precisión
-    });
+  let displayHTML = '';
+  let keyToRemove = '';
+  let toastMessage = '';
 
-    // Listener para cuando el usuario selecciona un lugar del autocompletado
-    autocomplete.addListener('place_changed', () => {
-      const place = autocomplete.getPlace();
-      if (place.formatted_address) {
-        inputLocalidad.value = place.formatted_address; // Rellenamos el input con la dirección formateada
-        console.log("Localidad seleccionada por autocompletado:", place.formatted_address);
-      } else {
-        console.warn("No se encontraron detalles para la localidad seleccionada.");
+  if (data.type === 'manual') {
+    displayHTML = `
+      <button type="button" class="btn btn-violeta-solid" disabled style="opacity: 1;">
+          <i class="bi bi-thermometer-half me-1"></i>
+          ${data.value}°C (Manual)
+      </button>
+    `;
+    keyToRemove = getTemperaturaKey();
+    toastMessage = "Temperatura manual desactivada. Recargando...";
+  } else if (data.type === 'clima') {
+    displayHTML = `
+      <button type="button" class="btn btn-violeta-solid" disabled style="opacity: 1;">
+          <i class="bi bi-cloud-sun me-1"></i>
+          ${data.value.toFixed(1)}°C (${data.location})
+      </button>
+    `;
+    keyToRemove = getClimaKey();
+    toastMessage = "Clima guardado desactivado. Recargando...";
+  }
+
+  const tempDisplay = document.createElement('div');
+  tempDisplay.className = 'btn-group';
+  tempDisplay.innerHTML = displayHTML + `
+      <button type="button" id="btnQuitarTemp" class="btn btn-violeta-outline" title="Dejar de usar temperatura manual">
+          <i class="bi bi-x-lg"></i>
+      </button>
+  `;
+  container.appendChild(tempDisplay);
+
+  document.getElementById('btnQuitarTemp').addEventListener('click', () => {
+    if (keyToRemove) localStorage.removeItem(keyToRemove);
+    actualizarDisplayTemperaturaExterna(null);
+    mostrarToast(toastMessage, "info");
+    setTimeout(() => window.location.reload(), 1500);
+  });
+}
+
+async function recalcularTodasLasPlantas(temperatura, sufijo = '') {
+  const plantCards = document.querySelectorAll('#plant-list .card');
+  for (const card of plantCards) {
+    const plantId = card.querySelector('[data-id]').dataset.id;
+    try {
+      const recalcUrl = `/api/plantas/${plantId}/recalcular/?temperatura=${temperatura}`;
+      const recalcRes = await fetchProtegido(recalcUrl);
+      if (!recalcRes.ok) continue;
+
+      const nuevosDatos = await recalcRes.json();
+      const textoRiego = card.querySelector('.card-text');
+      if (textoRiego) {
+        textoRiego.innerHTML = `🌱 <strong>${nuevosDatos.estado_texto}</strong>${sufijo}`;
       }
-    });
+    } catch (error) {
+      console.warn(`No se pudo recalcular la planta ${plantId}:`, error);
+    }
   }
 }
-
-window.initAutocomplete = initializeAutocomplete;
 
 document.addEventListener("DOMContentLoaded", () => {
+  const sidebarToggle = document.getElementById("sidebar-toggle");
+  const sidebar = document.getElementById("sidebar");
+  const mainContent = document.getElementById("main-content");
+
+  // Inicializar todos los tooltips de la página
+  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+  const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl);
+  });
+
+  if (sidebarToggle && sidebar && mainContent) {
+    const toggleIcon = sidebarToggle.querySelector("i");
+    const sidebarTooltip = bootstrap.Tooltip.getInstance(sidebarToggle);
+
+    // Aseguramos que el sidebar siempre inicie desplegado al cargar la página.
+    sidebar.classList.remove("collapsed");
+    mainContent.classList.remove("expanded");
+
+    sidebarToggle.addEventListener("click", () => {
+      sidebar.classList.toggle("collapsed");
+      mainContent.classList.toggle("expanded");
+
+      // Cambiar ícono y tooltip
+      if (sidebar.classList.contains("collapsed")) {
+        toggleIcon.className = "bi bi-chevron-double-right";
+        sidebarTooltip.setContent({ '.tooltip-inner': 'Expandir' });
+      } else {
+        toggleIcon.className = "bi bi-chevron-double-left";
+        sidebarTooltip.setContent({ '.tooltip-inner': 'Contraer' });
+      }
+
+      // Ocultamos el tooltip inmediatamente después del clic para que no se quede "pegado".
+      sidebarTooltip.hide();
+    });
+  }
+
+
   const btnLogout = document.getElementById("btnLogout");
   if (btnLogout) {
     btnLogout.addEventListener("click", (e) => {
@@ -164,28 +241,16 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
+      // Guardamos en localStorage, limpiamos el otro valor y actualizamos el display
+      const tempKey = getTemperaturaKey();
+      const climaKey = getClimaKey();
+
+      if (tempKey) localStorage.setItem(tempKey, temperatura);
+      if (climaKey) localStorage.removeItem(climaKey);
+
+      actualizarDisplayTemperaturaExterna({ type: 'manual', value: temperatura });
       mostrarToast(`Usando ${temperatura}°C para recalcular riegos...`, "info");
-
-      // Recalculamos el riego para cada planta visible
-      const plantCards = document.querySelectorAll('#plant-list .card');
-      plantCards.forEach(async (card) => {
-        const plantId = card.querySelector('[data-id]').dataset.id;
-        try {
-          const recalcUrl = `/api/plantas/${plantId}/recalcular/?temperatura=${temperatura}`;
-          const recalcRes = await fetchProtegido(recalcUrl);
-          if (!recalcRes.ok) return;
-
-          const nuevosDatos = await recalcRes.json();
-          
-          // Actualizamos el texto de la tarjeta
-          const textoRiego = card.querySelector('.card-text');
-          if (textoRiego) {
-            textoRiego.innerHTML = `🌱 <strong>${nuevosDatos.estado_texto}</strong> (con T° manual)`;
-          }
-        } catch (error) {
-          console.warn(`No se pudo recalcular la planta ${plantId}:`, error);
-        }
-      });
+      recalcularTodasLasPlantas(temperatura);
     });
   }
 
@@ -215,32 +280,37 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const temp = data.temperature.degrees;
+        const climaData = {
+          type: 'clima',
+          value: temp,
+          location: localidad.split(',')[0] // Guardamos solo el nombre de la ciudad
+        };
+
+        // Guardamos en localStorage, limpiamos el otro valor y actualizamos el display
+        const climaKey = getClimaKey();
+        const tempKey = getTemperaturaKey();
+        if (climaKey) localStorage.setItem(climaKey, JSON.stringify(climaData));
+        if (tempKey) localStorage.removeItem(tempKey);
+
+        actualizarDisplayTemperaturaExterna(climaData);
         mostrarToast(`Clima en ${localidad}: ${temp.toFixed(1)}°C. Recalculando riegos...`, "info");
 
-        // Ahora, recalculamos el riego para cada planta visible
-        const plantCards = document.querySelectorAll('#plant-list .card');
-        plantCards.forEach(async (card) => {
-          const plantId = card.querySelector('[data-id]').dataset.id;
-          try {
-            const recalcUrl = `/api/plantas/${plantId}/recalcular/?temperatura=${temp}`;
-            const recalcRes = await fetchProtegido(recalcUrl);
-            if (!recalcRes.ok) return;
-
-            const nuevosDatos = await recalcRes.json();
-            
-            // Actualizamos el texto de la tarjeta
-            const textoRiego = card.querySelector('.card-text');
-            if (textoRiego) {
-              textoRiego.innerHTML = `🌱 <strong>${nuevosDatos.estado_texto}</strong> (con clima)`;
-            }
-
-          } catch (error) {
-            console.warn(`No se pudo recalcular la planta ${plantId}:`, error);
-          }
-        });
+        recalcularTodasLasPlantas(temp, ' (con clima)');
       } catch (error) {
         mostrarToast(`❌ Error al buscar el clima: ${error.message}`, "danger");
       }
     });
+  }
+
+  // Al cargar la página, revisamos si hay una temperatura (manual o de clima) guardada
+  const tempKey = getTemperaturaKey();
+  const temperaturaGuardada = tempKey ? localStorage.getItem(tempKey) : null;
+  const climaKey = getClimaKey();
+  const climaGuardado = climaKey ? localStorage.getItem(climaKey) : null;
+
+  if (temperaturaGuardada) {
+    actualizarDisplayTemperaturaExterna({ type: 'manual', value: temperaturaGuardada });
+  } else if (climaGuardado) {
+    actualizarDisplayTemperaturaExterna(JSON.parse(climaGuardado));
   }
 });

@@ -11,6 +11,7 @@ body {
   color: #f8f9fa; /* Texto claro para que sea legible en fondo oscuro */
 }
 .card-titulo {
+  position: relative; /* Necesario para el borde interno */
   background-color: #e9ecef; /* Gris claro, igual que las otras tarjetas */
   color: var(--color-texto-principal);
   padding: 1.2rem 2rem 0.4rem 2rem; /* arriba, derecha, abajo, izquierda */
@@ -21,10 +22,24 @@ body {
   width: 100%;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
+.card-titulo::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  border-radius: 12px;
+  border: 3px solid #6f42c1; /* Borde interno violeta */
+  pointer-events: none;
+  z-index: 1;
+}
 .card-titulo h2 {
   margin: 0;
   font-size: 2rem;
   font-weight: 600;
+  position: relative; /* Asegura que el texto esté sobre el borde */
+  z-index: 2;
 }
 
 .btn-success {
@@ -43,6 +58,7 @@ header, nav {
   background-color: var(--color-header);
   color: white;
   padding: 1rem;
+  /* border-bottom: 3px solid #6f42c1; Borde inferior violeta */
 }
 .navbar-brand {
   color: #fff8e1 !important; /* beige suave con toque cálido */
@@ -184,6 +200,26 @@ button:hover {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
+/* Estilo para la tarjeta de bienvenida cuando no hay plantas */
+.card-bienvenida {
+  position: relative;
+  color: var(--color-texto-principal); /* Asegura texto oscuro */
+}
+
+.card-bienvenida::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  border-radius: 12px;
+  border: 3px solid #6f42c1; /* Borde interno violeta */
+  pointer-events: none;
+  z-index: 1;
+}
+
+
 /* Anulamos la animación de hover para la tarjeta de login/bienvenida */
 .card-login:hover {
   transform: none;
@@ -298,6 +334,7 @@ button:hover {
 
 .modal-content {
   background-color: #e9ecef; /* Gris claro para modales */
+  color: var(--color-texto-principal); /* Asegura texto oscuro en modales */
 }
 
 .list-group-item {
@@ -410,6 +447,13 @@ i.bi {
   left: 0; /* Desliza el fondo para rellenar el botón */
 }
 
+/* Asegura que el botón outline deshabilitado mantenga su color */
+.btn-violeta-outline:disabled,
+.btn-violeta-outline.disabled {
+  color: #6f42c1; /* Mantenemos el color violeta para consistencia */
+  border-color: #6f42c1;
+}
+
 /* --- Estilos para páginas con contenido centrado verticalmente (como home.html) --- */
 /*
   Para usar, agregar la clase 'page-centered' al body y 'main-container'
@@ -458,6 +502,14 @@ body.page-centered {
 
 .btn-violeta-solid:hover::before {
   left: 0; /* Desliza el fondo para rellenar el botón */
+}
+
+/* Asegura que el botón sólido deshabilitado mantenga su color */
+.btn-violeta-solid:disabled,
+.btn-violeta-solid.disabled {
+  background-color: #6f42c1;
+  border-color: #6f42c1;
+  opacity: 0.75; /* Ligera opacidad para indicar estado inactivo */
 }
 
 /* --- Nuevo Estilo de Botón Lima con Hover Violeta --- */
@@ -563,24 +615,114 @@ body.page-centered {
 
 /* --- Estilos para el Sidebar Violeta --- */
 #sidebar {
-  background-color: #6f42c1 !important; /* Forzamos el fondo violeta sobre bg-light */
+  background-color: var(--color-header) !important; /* Fondo negro como el navbar */
   color: #f8f9fa; /* Texto claro para todo el contenido */
+  width: 250px;
+  z-index: 1000;
+  transition: transform 0.3s ease-in-out;
 }
 
-#sidebar .sidebar-title {
+/* Contenedor interno para resolver el problema del borde bajo el navbar */
+.sidebar-content {
+  height: 100%;
+  padding-top: 4.5rem; /* Espacio ajustado para el navbar fijo */
+  z-index: 2;
+  padding-left: 1rem; /* Mantenemos un padding lateral para el scrollbar si aparece */
+  padding-right: 1rem;
+  padding-bottom: 1rem;
+}
+
+/* Estilos para el sidebar colapsado */
+#sidebar.collapsed {
+  transform: translateX(-100%);
+}
+
+/* Estilos para el contenido principal */
+#main-content {
+  margin-left: 250px; /* Mismo ancho que el sidebar */
+  transition: margin-left 0.3s ease-in-out;
+}
+#main-content.expanded {
+  margin-left: 0;
+}
+
+.sidebar-inner-wrapper {
+  position: relative;
+  height: 100%;
+  padding: 1rem;
+  overflow: visible; /* Permite que los elementos posicionados absolutamente se muestren */
+  z-index: 2;
+}
+
+/* Borde interno violeta aplicado al contenedor de contenido */
+.sidebar-inner-wrapper::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 12px;
+  border: 3px solid #6f42c1; /* Borde violeta */
+  pointer-events: none;
+  z-index: 1;
+}
+
+.sidebar-main-title {
   color: white; /* Títulos en blanco para que resalten */
   transition: color 0.3s ease, transform 0.3s ease;
+  position: relative; /* Necesario para el pseudo-elemento ::after */
+  z-index: 3;
+  padding-bottom: 0.5rem; /* Espacio para la línea */
 }
 
-#sidebar .sidebar-title:hover {
-  color: #f8f9fa; /* Un blanco un poco más brillante */
-  transform: translateX(5px); /* Desplazamiento sutil a la derecha */
-  transition: color 0.3s ease, transform 0.3s ease;
+/* Línea sutil debajo del título principal del sidebar */
+.sidebar-main-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40%; /* Hacemos la línea más corta que el texto */
+  height: 2px;
+  background-color: #6f42c1; /* Violeta */
 }
 
-#sidebar .sidebar-title:hover {
-  color: #f8f9fa; /* Un blanco un poco más brillante */
-  transform: translateX(5px); /* Desplazamiento sutil a la derecha */
+.sidebar-subtitle {
+  font-size: 1.1rem; /* Hacemos los subtítulos más pequeños que el principal */
+  cursor: pointer;
+  user-select: none;
+  color: #f8f9fa;
+  transition: color 0.3s ease;
+  position: relative; /* Necesario para el hover */
+  overflow: hidden;   /* Oculta el pseudo-elemento */
+  z-index: 1;
+  padding: 0.5rem; /* Añadimos padding para que el hover se vea mejor */
+  margin: -0.5rem; /* Compensamos el padding para no afectar el layout */
+}
+
+.sidebar-subtitle::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: #6f42c1; /* Violeta */
+  transition: left 0.3s ease-out;
+  z-index: -1;
+}
+
+/* Estado de hover y estado activo (acordeón abierto) */
+.sidebar-subtitle:hover,
+.sidebar-subtitle:not(.collapsed) {
+  color: white;
+}
+
+/* Animación de fondo para el hover y para el estado activo */
+.sidebar-subtitle:hover::before,
+.sidebar-subtitle:not(.collapsed)::before {
+  left: 0;
 }
 
 #sidebar .form-control {
@@ -664,31 +806,50 @@ body.page-centered {
   left: 0;
 }
 
-/* --- Estilo de Hover para Dropdown Items --- */
-.dropdown-item {
+/* --- Estilo de Hover animado para Dropdown Items (aplicado al LI) --- */
+.li-animado {
   position: relative;
   overflow: hidden;
-  transition: color 0.3s ease-out;
-  z-index: 1;
 }
 
-.dropdown-item::before {
+.li-animado::before {
   content: '';
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background-color: #6f42c1; /* Violeta de Bootstrap */
+  background-color: #6f42c1;
   transition: left 0.3s ease-out;
   z-index: -1;
 }
 
-.dropdown-item:hover, .dropdown-item:focus {
-  color: white !important; /* Texto blanco sobre el fondo violeta */
-  background-color: transparent !important; /* Anula el fondo gris por defecto de Bootstrap */
+.li-animado:hover .dropdown-item {
+  color: white !important;
+  background-color: transparent !important;
 }
 
-.dropdown-item:hover::before, .dropdown-item:focus::before {
+.li-animado:hover::before {
   left: 0;
+}
+
+/* --- Estilos para el autocompletado personalizado de Google Places --- */
+#suggestions-wrapper {
+  /* La posición y el ancho ahora se establecen con JS */
+  display: none; /* Oculto por defecto */
+  z-index: 1051; /* Un valor más alto que el navbar (1050) para asegurar que esté por encima */
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.suggestion-item {
+  background-color: #343a40; /* Fondo oscuro como el sidebar */
+  color: #f8f9fa;
+  border-color: rgba(255, 255, 255, 0.2);
+  font-size: 0.9rem;
+}
+
+/* Forzamos el redondeo de bordes en el input de localidad, ya que el botón se oculta */
+#inputLocalidad.form-control {
+  border-radius: var(--bs-border-radius) !important;
 }

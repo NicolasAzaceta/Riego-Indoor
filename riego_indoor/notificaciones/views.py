@@ -37,7 +37,11 @@ def google_calendar_auth(request):
         return JsonResponse({'error': 'Token inválido o expirado'}, status=401)
 
     flow = get_oauth_flow()
-    authorization_url, state = flow.authorization_url(access_type='offline', include_granted_scopes='true')
+    authorization_url, state = flow.authorization_url(
+        access_type='offline',
+        include_granted_scopes='true',
+        prompt='consent'  # <-- AÑADIDO: Esto fuerza a Google a emitir un nuevo refresh_token
+    )
     request.session['oauth_state'] = state
     return redirect(authorization_url)
 

@@ -1,8 +1,23 @@
 import { fetchProtegido } from "./auth.js";
-import { logoutUsuario } from './auth.js';
 import { checkGoogleCalendarStatus, iniciarVinculacionGoogle, mostrarToast } from './api.js';
 
 let plantaAEliminar = null;
+
+function mostrarTarjetaBienvenida() {
+  const container = document.getElementById("plant-list");
+  if (!container) return;
+  container.innerHTML = `
+    <div class="col-12 d-flex justify-content-center">
+      <div class="card card-bienvenida text-center" style="max-width: 500px;">
+        <div class="card-body">
+          <h5 class="card-title mb-3">¡Bienvenido a Riegum!</h5>
+          <p class="card-text">
+            Aquí se mostrarán tus plantas una vez que las agregues.
+          </p>
+        </div>
+      </div>
+    </div>`;
+}
 
 async function eliminarPlanta(id, cardElement) {
   try {
@@ -13,7 +28,14 @@ async function eliminarPlanta(id, cardElement) {
     if (res.status === 204) {
       // ✅ Animación de desvanecimiento
       cardElement.classList.add("desvanecer");
-      setTimeout(() => cardElement.remove(), 600);
+      setTimeout(() => {
+        cardElement.remove();
+        // Después de eliminar, verificamos si el dashboard quedó vacío.
+        const container = document.getElementById("plant-list");
+        if (container && container.children.length === 0) {
+          mostrarTarjetaBienvenida();
+        }
+      }, 600);
 
       mostrarToast("✅ Planta eliminada con éxito");
     } else {
@@ -203,7 +225,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const container = document.getElementById("plant-list");
 
     if (!plantas.length) {
-      container.innerHTML = "<p>No hay plantas registradas.</p>";
+      mostrarTarjetaBienvenida();
       return;
     }
 
@@ -320,17 +342,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   } catch (err) {
     console.error("Error al cargar plantas:", err);
     alert("No se pudieron cargar las plantas. Verificá tu conexión o el token.");
-  }
-
-  // --- LÓGICA DE BOTONES DE NAVEGACIÓN (MOVIDA AQUÍ PARA EVITAR CONFLICTOS) ---
-
-  const btnLogout = document.getElementById("btnLogout");
-  if (btnLogout) {
-    btnLogout.addEventListener("click", (e) => {
-      e.preventDefault(); // evita navegación por el href
-      mostrarToast("👋 ¡Sesión cerrada! ¡Hasta luego!");
-      setTimeout(() => logoutUsuario(), 2000);
-    });
   }
 
   const btnGoogleCalendar = document.getElementById("btnGoogleCalendar");
