@@ -30,7 +30,8 @@ Thumbs.db
 # Archivo de variables de entorno
 .env 
 
-riego_indoor/credentials/*.json
-riego_indoor/notificaciones/services/*.json
+# Archivos de credenciales de Google (OAuth y Service Account)
+credentials/*.json
+notificaciones/services/*.json
 
 *.pyc
