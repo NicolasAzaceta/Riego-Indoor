@@ -128,7 +128,9 @@ WSGI_APPLICATION = 'riego_indoor.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default=f"postgresql://{config('DB_USER')}:{config('DB_PASSWORD')}@{config('DB_HOST')}:{config('DB_PORT')}/{config('DB_NAME')}",
+        # Lee la variable de entorno DATABASE_URL que inyecta Render.
+        # Para desarrollo local, lee la misma variable desde tu archivo .env
+        default=config('DATABASE_URL'),
         conn_max_age=600,
         ssl_require=not DEBUG  # Requerir SSL solo en producción (cuando DEBUG es False)
     )
