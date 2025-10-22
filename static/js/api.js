@@ -14,7 +14,7 @@ export function mostrarToast(mensaje, tipo = "success") {
   toastBody.textContent = mensaje;
   toast.classList.remove("bg-success", "bg-danger", "bg-warning", "bg-violeta");
 
-  const claseBg = tipo === "success" ? "bg-violeta" : `bg-${tipo}`;
+  const claseBg = (tipo === "success" || tipo === "info") ? "bg-violeta" : `bg-${tipo}`;
   toast.classList.add(claseBg);
 
   // Inicializar y mostrar el toast
@@ -159,17 +159,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const sidebar = document.getElementById("sidebar");
   const mainContent = document.getElementById("main-content");
 
-  // Inicializar todos los tooltips de la página
-  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-  const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-    return new bootstrap.Tooltip(tooltipTriggerEl);
-  });
+  // Inicializar todos los tooltips de la página.
+  [...document.querySelectorAll('[data-bs-toggle="tooltip"]')].forEach(el => new bootstrap.Tooltip(el));
 
   if (sidebarToggle && sidebar && mainContent) {
     const toggleIcon = sidebarToggle.querySelector("i");
     const sidebarTooltip = bootstrap.Tooltip.getInstance(sidebarToggle);
 
-    // Aseguramos que el sidebar siempre inicie desplegado al cargar la página.
+    // Aseguramos que el sidebar siempre inicie desplegado.
     sidebar.classList.remove("collapsed");
     mainContent.classList.remove("expanded");
 
@@ -195,9 +192,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnLogout = document.getElementById("btnLogout");
   if (btnLogout) {
     btnLogout.addEventListener("click", (e) => {
-      e.preventDefault(); // evita navegación por el href
-      mostrarToast("👋 ¡Sesión cerrada! ¡Hasta luego!");
-      setTimeout(() => logoutUsuario(), 2000);
+      e.preventDefault();
+      mostrarToast("👋 ¡Sesión cerrada! ¡Hasta luego!", "info");
+      setTimeout(() => logoutUsuario(), 1500);
     });
   }
 
@@ -213,13 +210,14 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnGoogleDisconnect) {
     btnGoogleDisconnect.addEventListener("click", async (e) => {
       e.preventDefault();
-      if (!confirm("¿Estás seguro de que querés desvincular tu calendario? Los eventos ya creados no se eliminarán.")) {
+      if (!confirm("¿Estás seguro de que querés desvincular tu calendario? Se intentarán eliminar los eventos de riego ya creados.")) {
         return;
       }
       try {
         const res = await fetchProtegido('/api/google-calendar-disconnect/', { method: 'POST' });
         if (!res.ok) throw new Error('Error en el servidor');
-        mostrarToast("✅ Calendario desvinculado con éxito.", "success");
+        const data = await res.json();
+        mostrarToast(`✅ ${data.message}`, "success");
         setTimeout(() => window.location.reload(), 1500); // Recargamos para refrescar el estado
       } catch (error) {
         mostrarToast("❌ No se pudo desvincular el calendario.", "danger");
@@ -227,7 +225,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Verificamos el estado de la vinculación al cargar la página
+  // Verificamos el estado de la vinculación al cargar la página.
   checkGoogleCalendarStatus();
 
   const btnRecalcularTemp = document.getElementById("btnRecalcularTemp");
