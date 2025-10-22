@@ -1,50 +1,64 @@
+# --- Librerías Estándar ---
 import os
+import json
 from datetime import datetime, timedelta
+
+# --- Librerías de Terceros ---
 from dateutil import parser as dateparser
 import pytz
-from django.conf import settings
-from google.oauth2 import service_account, credentials
 from googleapiclient.discovery import build
-
-from google_auth_oauthlib.flow import Flow
+from google.oauth2 import service_account
 from google.oauth2.credentials import Credentials
-
 from google_auth_oauthlib.flow import Flow
-from googleapiclient.discovery import build
-from google.oauth2.credentials import Credentials
+from google.auth.transport import requests as google_requests # Para el refresh del token
+
+# --- Componentes de Django ---
 from django.conf import settings
 from django.utils import timezone
-import json
 
-CLIENT_SECRET_FILE = 'notificaciones/services/client_secret.json'
+def _get_redirect_uri():
+    """Devuelve la URI de redirección correcta para desarrollo o producción."""
+    if settings.DEBUG:
+        return 'http://localhost:8000/google-calendar/oauth2callback/'
+    
+    # En producción, usamos el dominio de Render.
+    hostname = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+    if not hostname:
+        # Fallback por si la variable no está disponible, aunque no debería pasar.
+        return 'https://riegum.com/google-calendar/oauth2callback/'
+    return f'https://{hostname}/google-calendar/oauth2callback/'
 
 # Configurar el flujo de OAuth 2.0
 def get_oauth_flow():
-    return Flow.from_client_secrets_file(
-        CLIENT_SECRET_FILE,
-        scopes=['https://www.googleapis.com/auth/calendar'],
-        redirect_uri='http://localhost:8000/google-calendar/oauth2callback/'  # Apunta a la vista de callback del backend
-    )
+    """Crea el flujo OAuth desde variables de entorno (producción) o archivo (desarrollo)."""
+    client_secrets_json_str = os.environ.get('GOOGLE_CLIENT_SECRET_JSON')
+    scopes = ['https://www.googleapis.com/auth/calendar']
+    redirect_uri = _get_redirect_uri()
+
+    if client_secrets_json_str:
+        # Producción: Cargar desde la variable de entorno
+        client_config = json.loads(client_secrets_json_str)
+        return Flow.from_client_config(client_config, scopes=scopes, redirect_uri=redirect_uri)
+    
+    # Desarrollo: Cargar desde el archivo local
+    return Flow.from_client_secrets_file('notificaciones/services/client_secret.json', scopes=scopes, redirect_uri=redirect_uri)
 
 # Obtener el servicio de Google Calendar con las credenciales OAuth del usuario
 def get_user_calendar_service(user):
-    with open(CLIENT_SECRET_FILE, 'r') as f:
-        client_config = json.load(f)['web']
-
     profile = user.profile
     creds = Credentials(
         token=profile.google_access_token,
         refresh_token=profile.google_refresh_token,
         token_uri='https://oauth2.googleapis.com/token',
-        client_id=client_config.get('client_id'),
-        client_secret=client_config.get('client_secret')
+        client_id=settings.GOOGLE_CLIENT_ID,
+        client_secret=settings.GOOGLE_CLIENT_SECRET
     )
 
     # --- LÓGICA CLAVE: Refrescar el token si es necesario ---
     # Verificamos si el token ha expirado o está a punto de expirar (ej. en los próximos 5 minutos)
     if creds.expired and creds.refresh_token:
         print(f"Token de Google para '{user.username}' expirado. Refrescando...")
-        creds.refresh(credentials.Request())
+        creds.refresh(google_requests.Request())
         # Guardamos los nuevos tokens en el perfil del usuario
         profile.google_access_token = creds.token
         # Google a veces devuelve un nuevo refresh_token, aunque no siempre.
