@@ -19,6 +19,9 @@ __pycache__/
 # Archivos de logs
 *.log
 
+# Carpeta de archivos estáticos de producción
+staticfiles/
+
 # Archivos de migraciones de Django (opcional, si quieres ignorar)
 # */migrations/*.py
 # */migrations/*.pyc
