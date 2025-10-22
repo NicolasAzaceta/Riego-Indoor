@@ -1,25 +1,18 @@
-services:
+databases:
   # Servicio de la base de datos PostgreSQL
-  - type: pserv
-    name: riegum-db
-    env: postgres
-    # Plan gratuito para pruebas, puedes cambiar a 'starter' para producción pequeña
-    plan: free
+  - name: riegum-db
     databaseName: riegum_db
     user: riegum_user
+    plan: free # Plan gratuito para pruebas, puedes cambiar a 'starter' para producción pequeña
 
+services:
   # Servicio de la aplicación web Django
   - type: web
     name: riegum-web
     env: python
-    # Conecta este servicio a la base de datos definida arriba
     # Render inyectará la variable de entorno DATABASE_URL automáticamente
-    # con la URL de conexión a la base de datos.
-    database:
-      name: riegum-db
-      # La variable de entorno DATABASE_URL se generará automáticamente
-      # con el formato postgresql://user:password@host:port/database
-    
+    # gracias a la sección 'envVars' de abajo, que conecta con la base de datos.
+
     # Configuración del dominio personalizado
     domains:
       - riegum.com
@@ -32,7 +25,7 @@ services:
 
     # Comando para iniciar el servidor Gunicorn
     # 'riego_indoor' es el nombre de tu carpeta principal de Django
-    startCommand: gunicorn riego_indoor.wsgi:application
+    startCommand: gunicorn --workers 4 --chdir riego_indoor riego_indoor.wsgi:application
 
     # Variables de entorno para la aplicación web
     envVars:
