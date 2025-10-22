@@ -41,7 +41,6 @@ export async function obtenerTokenValido() {
 
   if (!access || !refresh) {
     console.warn("No hay tokens disponibles");
-    window.location.href = "/login/";
     return null;
   }
 
@@ -53,7 +52,7 @@ export function logoutUsuario() {
   localStorage.removeItem("access");
   localStorage.removeItem("refresh");
   localStorage.removeItem("username"); // Limpiamos el nombre de usuario
-  window.location.href = "/login/";
+  window.location.href = "/";
 }
 
 // ✅ Fetch con token: realiza peticiones autenticadas
@@ -63,8 +62,7 @@ export async function fetchProtegido(url, options = {}) {
 
   // Si no hay tokens, no tiene sentido continuar. Redirigir al login.
   if (!token || !refresh) {
-    logoutUsuario();
-    return new Response(null, { status: 401, statusText: "No hay tokens, cerrando sesión." });
+    return null;
   }
 
   let response = await fetch(url, {

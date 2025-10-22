@@ -143,34 +143,6 @@
     </div>
   </div>
 
-      <!-- Modal de confirmación -->
-    <div class="modal fade" id="modalConfirmar" tabindex="-1" aria-labelledby="modalConfirmarLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header justify-content-center">
-        <h5 class="modal-title text-center w-100" id="modalConfirmarLabel">¿Eliminar planta?</h5>
-      </div>
-      <div class="modal-body text-center">
-        Esta acción no se puede deshacer.
-      </div>
-      <div class="modal-footer justify-content-end">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-danger" id="btnConfirmarEliminar">Eliminar</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-    <!-- Toast de éxito -->
-    <div id="toast-container" class="position-fixed start-50 translate-middle-x p-3" style="top: 7rem; z-index: 9999">
-      <div id="toast" class="toast fade align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="d-flex">
-          <div class="toast-body" id="toast-body"></div>          
-        </div>
-      </div>
-    </div>
-
-
     
   {% load static %}
   <script type="module" src="{% static 'js/plants.js' %}"></script>

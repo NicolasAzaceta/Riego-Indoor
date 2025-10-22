@@ -352,24 +352,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  const btnGoogleDisconnect = document.getElementById("btnGoogleDisconnect");
-  if (btnGoogleDisconnect) {
-    btnGoogleDisconnect.addEventListener("click", async (e) => {
-      e.preventDefault();
-      if (!confirm("¿Estás seguro de que querés desvincular tu calendario? Los eventos ya creados no se eliminarán.")) {
-        return;
-      }
-      try {
-        const res = await fetchProtegido('/api/google-calendar-disconnect/', { method: 'POST' });
-        if (!res.ok) throw new Error('Error en el servidor');
-        mostrarToast("✅ Calendario desvinculado con éxito.", "success");
-        setTimeout(() => window.location.reload(), 1500); // Recargamos para refrescar el estado
-      } catch (error) {
-        mostrarToast("❌ No se pudo desvincular el calendario.", "danger");
-      }
-    });
-  }
-
   checkGoogleCalendarStatus();
 });
 

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
+from rest_framework.validators import UniqueValidator
 from .models import Planta, Riego
 
 # # -------- Usuarios --------Asi estaba creado por Nico. Lo modifico para ver si queda mejor con el profile oauth2
@@ -19,6 +20,10 @@ from .models import Planta, Riego
 #         )
 #         return user
 class RegisterSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(
+        required=True,
+        validators=[UniqueValidator(queryset=User.objects.all(), message="Ya existe un usuario con esta dirección de correo electrónico.")]
+    )
     class Meta:
         model = User
         fields = ['username', 'email', 'password']
