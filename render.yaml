@@ -1,0 +1,55 @@
+services:
+  # Servicio de la base de datos PostgreSQL
+  - type: pserv
+    name: riegum-db
+    env: postgres
+    # Plan gratuito para pruebas, puedes cambiar a 'starter' para producción pequeña
+    plan: free
+    databaseName: riegum_db
+    user: riegum_user
+
+  # Servicio de la aplicación web Django
+  - type: web
+    name: riegum-web
+    env: python
+    # Conecta este servicio a la base de datos definida arriba
+    # Render inyectará la variable de entorno DATABASE_URL automáticamente
+    # con la URL de conexión a la base de datos.
+    database:
+      name: riego-indoor-db
+      # La variable de entorno DATABASE_URL se generará automáticamente
+      # con el formato postgresql://user:password@host:port/database
+    
+    # Configuración del dominio personalizado
+    domains:
+      - riegum.com
+
+    # Comando para instalar dependencias y recolectar archivos estáticos
+    buildCommand: |
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput # Recolecta archivos estáticos
+      python manage.py migrate             # Aplica las migraciones de la base de datos
+
+    # Comando para iniciar el servidor Gunicorn
+    # 'riego_indoor' es el nombre de tu carpeta principal de Django
+    startCommand: gunicorn riego_indoor.wsgi:application
+
+    # Variables de entorno para la aplicación web
+    envVars:
+      - key: SECRET_KEY
+        sync: false # No sincronizar con el repositorio, se establecerá en el dashboard de Render
+      - key: DATABASE_URL
+        fromDatabase:
+          name: riego-indoor-db
+          property: connectionString
+      - key: DEBUG
+        value: "False" # Siempre False en producción
+      - key: RENDER_EXTERNAL_HOSTNAME
+        value: ${RENDER_EXTERNAL_HOSTNAME} # Render inyecta este valor automáticamente
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false # No sincronizar, se establecerá en el dashboard de Render
+      - key: GOOGLE_CLIENT_ID
+        sync: false # No sincronizar, se establecerá en el dashboard de Render
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false # No sincronizar, se establecerá en el dashboard de Render
+    # Puedes añadir más variables de entorno aquí si las necesitas
