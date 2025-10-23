@@ -35,11 +35,15 @@ DEBUG = config("DEBUG", default=False, cast=bool)
 if DEBUG:
     os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = []
 
 RENDER_EXTERNAL_HOSTNAME = config('RENDER_EXTERNAL_HOSTNAME', default=None)
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+# Agregamos el dominio personalizado y los de desarrollo
+ALLOWED_HOSTS.extend(['riegum.com', 'www.riegum.com', 'localhost', '127.0.0.1'])
+
 
 # Application definition
 
