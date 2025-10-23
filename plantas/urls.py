@@ -13,5 +13,4 @@ urlpatterns = [
     path('register/', register_view, name='register'),
     path('privacy/', privacy_view, name='privacy'),
     path('terms/', terms_view, name='terms'),
-
 ]
