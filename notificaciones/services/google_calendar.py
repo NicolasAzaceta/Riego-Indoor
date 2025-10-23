@@ -21,12 +21,8 @@ def _get_redirect_uri():
     if settings.DEBUG:
         return 'http://localhost:8000/google-calendar/oauth2callback/'
     
-    # En producción, usamos el dominio de Render.
-    hostname = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
-    if not hostname:
-        # Fallback por si la variable no está disponible, aunque no debería pasar.
-        return 'https://riegum.com/google-calendar/oauth2callback/'
-    return f'https://{hostname}/google-calendar/oauth2callback/'
+    # En producción, siempre usamos el dominio personalizado principal.
+    return 'https://riegum.com/google-calendar/oauth2callback/'
 
 # Configurar el flujo de OAuth 2.0
 def get_oauth_flow():
