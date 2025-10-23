@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Política de Privacidad - Riegum</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="icon" type="image/png" href="{% static 'assets/img/icono.png' %}">
+    <style>
+        body {
+            background-color: #343a40;
+            color: #f8f9fa;
+        }
+        .container {
+            max-width: 800px;
+        }
+        h1, h2 {
+            color: #6f42c1; /* Violeta */
+            border-bottom: 2px solid #6f42c1;
+            padding-bottom: 0.5rem;
+            margin-top: 1.5rem;
+        }
+        strong {
+            color: #9ACD32; /* Verde lima */
+        }
+        a {
+            color: #0dcaf0; /* Celeste */
+        }
+    </style>
+</head>
+<body>
+<div class="container py-5">
+    <h1>Política de Privacidad de Riegum</h1>
+    <p class="text-white-50">Última actualización: 23 de octubre de 2025</p>
+
+    <h2>1. Información que Recopilamos</h2>
+    <p>Para ofrecer la funcionalidad de integración con Google Calendar, <strong>Riegum</strong> solicita tu permiso para acceder a tu calendario. Específicamente, la aplicación recopila y almacena la siguiente información:</p>
+    <ul>
+        <li><strong>Tokens de Acceso y Refresco de Google OAuth 2.0:</strong> Estos tokens son necesarios para que la aplicación pueda interactuar con la API de Google Calendar en tu nombre, sin necesidad de que inicies sesión repetidamente. Se almacenan de forma segura en nuestra base de datos.</li>
+        <li><strong>ID de Eventos de Google Calendar:</strong> Para cada planta que tenga un recordatorio de riego, almacenamos el ID del evento creado en tu calendario. Esto nos permite actualizar o eliminar el evento correcto cuando regás, modificás o eliminás una planta.</li>
+    </ul>
+    <p><strong>No accedemos, leemos ni almacenamos ningún otro dato de tu calendario o de tu cuenta de Google.</strong> El acceso se limita estrictamente a la creación y gestión de los eventos generados por Riegum.</p>
+
+    <h2>2. Cómo Usamos tu Información</h2>
+    <p>La información obtenida de las APIs de Google se utiliza exclusivamente para:</p>
+    <ul>
+        <li>Crear eventos en tu Google Calendar para los próximos riegos de tus plantas.</li>
+        <li>Actualizar las fechas de dichos eventos cuando registrás un riego o modificás los datos de una planta.</li>
+        <li>Eliminar los eventos del calendario si eliminás una planta o desvinculás tu cuenta.</li>
+        <li>Obtener datos climáticos: Cuando ingresás una localidad para obtener el clima, utilizamos la API de Google Places para ayudarte a encontrar la localidad correcta y la API de Google Weather para obtener la temperatura. La información de la localidad que ingresás se envía a Google para este propósito, pero <strong>Riegum no almacena tu ubicación geográfica ni rastrea tus movimientos.</strong></li>
+    </ul>
+    <p>El uso de esta información cumple con la <a href="https://developers.google.com/terms/api-services-user-data-policy#limited-use-requirements" target="_blank" rel="noopener noreferrer">Política de Datos de Usuario de los Servicios de API de Google</a>, incluyendo los requisitos de Uso Limitado. La información no se utiliza para ningún otro propósito, como publicidad, y no se comparte con terceros.</p>
+
+    <h2>3. Seguridad de los Datos</h2>
+    <p>La conexión con los servicios de Google se realiza a través del protocolo seguro <strong>OAuth 2.0</strong>. Los tokens de acceso se almacenan cifrados en nuestra base de datos para proteger tu información.</p>
+
+    <h2>4. Control del Usuario y Eliminación de Datos</h2>
+    <p>Tenés control total sobre tus datos:</p>
+    <ul>
+        <li><strong>Consentimiento:</strong> El acceso a tu calendario solo se otorga con tu consentimiento explícito a través de la pantalla de autorización de Google.</li>
+        <li><strong>Desvinculación:</strong> Podés desvincular tu cuenta de Google Calendar en cualquier momento desde el panel de control de Riegum. Al hacerlo, se eliminarán de nuestra base de datos tus tokens de acceso y refresco, y la aplicación intentará eliminar todos los eventos de riego que haya creado en tu calendario.</li>
+        <li><strong>Revocar Acceso:</strong> También podés revocar el acceso de Riegum a tu cuenta de Google directamente desde la <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer">página de permisos de tu cuenta de Google</a>.</li>
+    </ul>
+
+    <h2>5. Contacto</h2>
+    <p>Si tenés alguna pregunta sobre esta Política de Privacidad, no dudes en contactarnos a través del siguiente correo electrónico: <strong>nicolasazaceta@gmail.com</strong>.</p>
+
+    <div class="text-center mt-5">
+        <a href="/" class="btn btn-violeta-outline">Volver al inicio</a>
+    </div>
+
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
