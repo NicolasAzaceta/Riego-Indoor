@@ -43,8 +43,14 @@
             <label for="password" class="form-label">Contraseña</label>
             <input type="password" class="form-control" id="password" required>
           </div>
+          <div class="form-check mb-4">
+            <input class="form-check-input" type="checkbox" value="" id="termsCheckbox">
+            <label class="form-check-label small" for="termsCheckbox">
+              He leído y acepto la <a href="/privacy/" target="_blank">Política de Privacidad</a> y los <a href="/terms/" target="_blank">Términos y Condiciones</a>.
+            </label>
+          </div>
           <div class="d-grid">
-            <button type="submit" class="btn btn-violeta-outline btn-lg">Registrarse</button>
+            <button type="submit" id="btnRegister" class="btn btn-violeta-outline btn-lg" disabled>Registrarse</button>
           </div>
         </form>
         <hr>
@@ -96,6 +102,14 @@
   {% load static %}
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script type="module" src="{% static 'js/register.js' %}"></script>
+  <script>
+    // Lógica para habilitar/deshabilitar el botón de registro
+    const termsCheckbox = document.getElementById('termsCheckbox');
+    const btnRegister = document.getElementById('btnRegister');
+    termsCheckbox.addEventListener('change', () => {
+      btnRegister.disabled = !termsCheckbox.checked;
+    });
+  </script>
 
 </body>
 </html>

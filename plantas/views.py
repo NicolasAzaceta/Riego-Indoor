@@ -37,6 +37,12 @@ def login_view(request):
 def register_view(request):
     return render(request, 'register.html')
 
+def privacy_view(request):
+    return render(request, 'privacy.html')
+
+def terms_view(request):
+    return render(request, 'terms.html')
+
 # -------- Registro de usuarios --------
 from rest_framework.views import APIView
 

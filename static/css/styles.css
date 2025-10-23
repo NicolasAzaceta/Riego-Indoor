@@ -853,3 +853,35 @@ body.page-centered {
 #inputLocalidad.form-control {
   border-radius: var(--bs-border-radius) !important;
 }
+
+/* --- Estilo de Hover para Enlaces Genéricos (como Política de Privacidad) --- */
+.link-hover-violeta {
+  position: relative;
+  overflow: hidden;
+  display: inline-block; /* Para que el fondo se ajuste al texto */
+  padding: 0.25rem 0.5rem;
+  margin: -0.25rem -0.5rem; /* Compensa el padding para no afectar el layout */
+  text-decoration: none;
+  transition: color 0.2s ease-out;
+  z-index: 1;
+}
+
+.link-hover-violeta::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: #6f42c1; /* Violeta */
+  transition: left 0.2s ease-out;
+  z-index: -1;
+}
+
+.link-hover-violeta:hover {
+  color: white !important; /* Forzamos el color blanco para sobreescribir .text-muted */
+}
+
+.link-hover-violeta:hover::before {
+  left: 0;
+}

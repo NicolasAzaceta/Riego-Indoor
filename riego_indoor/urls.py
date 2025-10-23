@@ -22,4 +22,5 @@ urlpatterns = [
     path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/google-calendar-status/', GoogleCalendarStatusView.as_view(), name='google-calendar-status'),
     path('api/google-calendar-disconnect/', GoogleCalendarDisconnectView.as_view(), name='google-calendar-disconnect'),
+    
 ]
