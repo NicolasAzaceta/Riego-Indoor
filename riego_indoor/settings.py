@@ -49,16 +49,19 @@ if DEBUG:
     ALLOWED_HOSTS.extend(['localhost', '127.0.0.1'])
 
 INSTALLED_APPS = [
+    # Nuestras apps primero para que sus plantillas tengan prioridad
+    'plantas',
+    'notificaciones',
+    # Apps de Django
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # Apps de terceros
     'rest_framework',
     'corsheaders',
-    'plantas',
-    'notificaciones',
 ]
 
 MIDDLEWARE = [
@@ -217,3 +220,14 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000  # 1 año
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+
+# --- Email Configuration ---
+if DEBUG:
+    # En desarrollo, los emails se imprimen en la consola.
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+else:
+    # En producción, usaremos un servicio real (a configurar más adelante).
+    # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    # EMAIL_HOST = config('EMAIL_HOST')
+    # ... (acá irían las credenciales de SendGrid, Mailgun, etc.)
+    pass
