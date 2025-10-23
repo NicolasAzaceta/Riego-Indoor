@@ -41,11 +41,12 @@ RENDER_EXTERNAL_HOSTNAME = config('RENDER_EXTERNAL_HOSTNAME', default=None)
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
-# Agregamos el dominio personalizado y los de desarrollo
-ALLOWED_HOSTS.extend(['riegum.com', 'www.riegum.com', 'localhost', '127.0.0.1'])
-
+# Agregamos el dominio personalizado
+ALLOWED_HOSTS.extend(['riegum.com', 'www.riegum.com'])
 
 # Application definition
+if DEBUG:
+    ALLOWED_HOSTS.extend(['localhost', '127.0.0.1'])
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -75,14 +76,22 @@ MIDDLEWARE = [
 # Configuración de CORS
 if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
-else:
-    CORS_ALLOWED_ORIGINS = [
-        f"https://{RENDER_EXTERNAL_HOSTNAME}",
+    # En desarrollo, confiamos en los orígenes locales para CSRF
+    CSRF_TRUSTED_ORIGINS = [
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
     ]
+else:
+    # Empezamos con los dominios personalizados
+    CORS_ALLOWED_ORIGINS = [
+        "https://riegum.com",
+        "https://www.riegum.com",
+    ]
+    if RENDER_EXTERNAL_HOSTNAME:
+        CORS_ALLOWED_ORIGINS.append(f"https://{RENDER_EXTERNAL_HOSTNAME}")
+    # En producción, los orígenes de CSRF son los mismos que los de CORS
+    CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS.copy()
 
-CSRF_TRUSTED_ORIGINS = [
-    f"https://{RENDER_EXTERNAL_HOSTNAME}",
-]
 ROOT_URLCONF = 'riego_indoor.urls'
 
 # TEMPLATES = [
@@ -199,3 +208,12 @@ GOOGLE_CLIENT_ID = config('GOOGLE_CLIENT_ID', default=None)
 GOOGLE_CLIENT_SECRET = config('GOOGLE_CLIENT_SECRET', default=None)
 
 GOOGLE_MAPS_API_KEY = config('GOOGLE_MAPS_API_KEY')
+
+# --- Security Settings for Production ---
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 año
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
