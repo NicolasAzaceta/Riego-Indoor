@@ -3,6 +3,29 @@ import { checkGoogleCalendarStatus, iniciarVinculacionGoogle, mostrarToast } fro
 
 let plantaAEliminar = null;
 
+async function regarPlanta(id, cantidadAgua) {
+  try {
+    const res = await fetchProtegido(`/api/plantas/${id}/regar/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        cantidad_agua_ml: cantidadAgua,
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error("Error en la respuesta del servidor al regar la planta");
+    }
+    return true; // Devolvemos true si el riego fue exitoso.
+  } catch (error) {
+    console.error("❌ Error al regar planta:", error);
+    mostrarToast("No se pudo regar la planta.");
+    return false;
+  }
+}
+
 function mostrarTarjetaBienvenida() {
   const container = document.getElementById("plant-list");
   if (!container) return;
@@ -293,7 +316,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }, 2000);
 
         // Corregimos: regarPlanta ahora devuelve el estado actualizado.
-        const riegoExitoso = await regarPlanta(planta.id);
+        const riegoExitoso = await regarPlanta(planta.id, planta.recommended_water_ml);
         if (!riegoExitoso) return; // Si el riego falló, no continuamos.
 
         const data = await obtenerPlanta(planta.id); // Obtenemos los datos completos y recalculados de la planta.
@@ -380,24 +403,6 @@ const plantId = params.get("id");
 //     mostrarToast("❌ No se pudo regar la planta");
 //   }
 // }
-
-async function regarPlanta(id) {
-  try {
-    const res = await fetchProtegido(`/api/plantas/${id}/regar/`, {
-      method: "POST"
-    });
-
-    if (!res.ok) {
-      throw new Error("Error en la respuesta del servidor al regar la planta");
-    }
-    // Devolvemos true si el riego fue exitoso.
-    return true;
-  } catch (error) {
-    console.error("❌ Error al regar planta:", error);
-    mostrarToast("No se pudo regar la planta.");
-    return false;
-  }
-}
 
 document.getElementById("btnAgregarPlanta").addEventListener("click", () => {
   window.location.href = "/add/";
