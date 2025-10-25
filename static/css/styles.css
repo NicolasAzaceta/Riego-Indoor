@@ -888,18 +888,24 @@ body.page-centered {
 
 /* --- Estilos para la página de detalles (Estadísticas y Gráfico) --- */
 .card-stat {
-    background-color: #2c3034; /* Un poco más claro que el fondo */
-    border: 1px solid #495057;
+    background-color: #e9ecef; /* Gris claro, igual que las tarjetas del dashboard */
+    border: 1px solid #dee2e6; /* Borde sutil para el fondo claro */
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 
 .card-stat:hover {
     transform: translateY(-5px);
-    box-shadow: 0 0.5rem 1rem rgba(154, 205, 50, 0.15); /* Sombra verde lima */
+    box-shadow: 0 0.5rem 1rem rgba(111, 66, 193, 0.2); /* Sombra violeta */
 }
 
 .chart-container {
     position: relative;
     height: 300px; /* Altura fija para el gráfico */
     width: 100%;
+}
+
+/* Anula el efecto de zoom en la tarjeta del gráfico */
+.card-custom:hover {
+    transform: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15); /* Mantenemos la sombra original */
 }

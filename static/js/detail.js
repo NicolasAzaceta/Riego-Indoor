@@ -172,8 +172,8 @@ function renderizarEstadisticas(stats) {
   const cards = [
     { icon: "bi-calendar-range", title: "Frecuencia Promedio", value: `${(stats.frecuencia_promedio_dias || 0).toFixed(1)} días` },
     { icon: "bi-droplet-fill", title: "Riegos Totales", value: `${stats.total_riegos || 0} riegos` },
-    { icon: "bi-water", title: "Agua Promedio", value: `${Math.round(stats.promedio_agua_ml || 0)} ml` },
-    { icon: "bi-clock-history", title: "Último Riego", value: stats.fecha_ultimo_riego ? new Date(stats.fecha_ultimo_riego).toLocaleDateString() : 'N/A' },
+    { icon: "bi-water", title: "Agua Promedio", value: stats.promedio_agua_ml > 0 ? `${Math.round(stats.promedio_agua_ml)} ml` : 'N/A' },
+    { icon: "bi-clock-history", title: "Último Riego", value: stats.ultimo_riego_fecha ? new Date(stats.ultimo_riego_fecha).toLocaleDateString() : 'N/A' },
   ];
 
   cards.forEach(card => {
@@ -183,8 +183,8 @@ function renderizarEstadisticas(stats) {
       <div class="card card-stat h-100">
         <div class="card-body text-center">
           <i class="${card.icon} display-6 text-violeta"></i>
-          <h6 class="card-subtitle mt-2 mb-1 text-white-50">${card.title}</h6>
-          <p class="card-text fs-5 fw-bold">${card.value}</p>
+          <h6 class="card-subtitle mt-2 mb-1 text-muted">${card.title}</h6>
+          <p class="card-text fs-5 fw-bold text-dark">${card.value}</p>
         </div>
       </div>
     `;
