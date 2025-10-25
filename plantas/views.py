@@ -344,3 +344,5 @@ class RiegoViewSet(viewsets.ReadOnlyModelViewSet):
 # path('home/', TemplateView.as_view(template_name='login.html'), name='home'),
 # path('', TemplateView.as_view(template_name='login.html'), name='home'),  # si querés que sea la raíz
 # Asegurate de tener el template login.html en la carpeta templates y la configuración correcta en settings.py
+# path('', TemplateView.as_view(template_name='login.html'), name='home'),  # si querés que sea la raíz
+# Asegurate de tener el template login.html en la carpeta templates y la configuración correcta en settings.py
