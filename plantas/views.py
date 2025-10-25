@@ -14,7 +14,8 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 from django.contrib.auth.decorators import login_required
-from django.db.models import Avg, Sum, Count, Max, Min
+from django.db.models import Avg, Sum, Count, Max, Min, Value
+from django.db.models.functions import Coalesce
 from django.contrib.auth import login, authenticate
 from django.conf import settings
 import requests
@@ -214,8 +215,8 @@ class PlantaViewSet(viewsets.ModelViewSet):
         # Usamos el ORM de Django para que la base de datos haga el trabajo pesado.
         estadisticas_db = historial_riegos_qs.aggregate(
             total_riegos=Count('id'),
-            total_agua_ml=Sum('cantidad_agua_ml'),
-            promedio_agua_ml=Avg('cantidad_agua_ml'),
+            total_agua_ml=Sum(Coalesce('cantidad_agua_ml', Value(0))),
+            promedio_agua_ml=Avg(Coalesce('cantidad_agua_ml', Value(0))),
             max_agua_ml=Max('cantidad_agua_ml'),
             min_agua_ml=Min('cantidad_agua_ml'),
             primer_riego_fecha=Min('fecha'),
