@@ -226,8 +226,13 @@ if DEBUG:
     # En desarrollo, los emails se imprimen en la consola.
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 else:
-    # En producción, usaremos un servicio real (a configurar más adelante).
-    # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    # EMAIL_HOST = config('EMAIL_HOST')
-    # ... (acá irían las credenciales de SendGrid, Mailgun, etc.)
-    pass
+    # En producción, usamos un servicio de SMTP como SendGrid.
+    # Estas variables se configuran en el dashboard de Render.
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = config('EMAIL_HOST')
+    EMAIL_PORT = config('EMAIL_PORT', cast=int)
+    EMAIL_USE_TLS = True
+    EMAIL_HOST_USER = config('EMAIL_HOST_USER')
+    EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+    DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL') # El email que aparecerá como remitente
+    SERVER_EMAIL = DEFAULT_FROM_EMAIL # Para correos de error del servidor
