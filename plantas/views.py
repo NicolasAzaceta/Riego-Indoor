@@ -217,7 +217,7 @@ class PlantaViewSet(viewsets.ModelViewSet):
             total_agua_ml=Sum('cantidad_agua_ml'),
             promedio_agua_ml=Avg('cantidad_agua_ml'),
             max_agua_ml=Max('cantidad_agua_ml'),
-            min_agua_ml=Max('cantidad_agua_ml'),
+            min_agua_ml=Min('cantidad_agua_ml'),
             primer_riego_fecha=Min('fecha'),
             ultimo_riego_fecha=Max('fecha')
         )
