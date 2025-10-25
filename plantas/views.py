@@ -14,6 +14,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 from django.contrib.auth.decorators import login_required
+from django.db.models import Avg, Sum, Count, Max, Min
 from django.contrib.auth import login, authenticate
 from django.conf import settings
 import requests
@@ -198,6 +199,54 @@ class PlantaViewSet(viewsets.ModelViewSet):
         riego = serializer.save()
         return Response(RiegoSerializer(riego).data, status=status.HTTP_201_CREATED)
 
+    @action(detail=True, methods=['get'])
+    def historial(self, request, pk=None):
+        """
+        Devuelve el historial de riegos y estadísticas para una planta específica.
+        Responde con un JSON que contiene:
+        - `estadisticas`: Datos agregados como promedios, totales, etc.
+        - `historial_riegos`: Una lista de todos los registros de riego.
+        """
+        planta = self.get_object()
+        historial_riegos_qs = planta.riegos.all().order_by('-fecha')
+
+        # --- 1. Cálculo de Estadísticas ---
+        # Usamos el ORM de Django para que la base de datos haga el trabajo pesado.
+        estadisticas_db = historial_riegos_qs.aggregate(
+            total_riegos=Count('id'),
+            total_agua_ml=Sum('cantidad_agua_ml'),
+            promedio_agua_ml=Avg('cantidad_agua_ml'),
+            max_agua_ml=Max('cantidad_agua_ml'),
+            min_agua_ml=Max('cantidad_agua_ml'),
+            primer_riego_fecha=Min('fecha'),
+            ultimo_riego_fecha=Max('fecha')
+        )
+
+        # --- Cálculo de Frecuencia Promedio (requiere un poco de Python) ---
+        frecuencia_promedio_dias = None
+        if historial_riegos_qs.count() > 1:
+            # Obtenemos solo las fechas, ya ordenadas por el queryset
+            fechas_riegos = list(historial_riegos_qs.values_list('fecha', flat=True))
+            # Calculamos la diferencia en días entre riegos consecutivos
+            diferencias = [(fechas_riegos[i-1] - fechas_riegos[i]).days for i in range(1, len(fechas_riegos))]
+            if diferencias:
+                frecuencia_promedio_dias = sum(diferencias) / len(diferencias)
+
+        # --- 2. Construcción del objeto de respuesta ---
+        estadisticas = {
+            'total_riegos': estadisticas_db['total_riegos'] or 0,
+            'total_agua_ml': estadisticas_db['total_agua_ml'] or 0,
+            'promedio_agua_ml': round(estadisticas_db['promedio_agua_ml'], 1) if estadisticas_db['promedio_agua_ml'] else 0,
+            'max_agua_ml': estadisticas_db['max_agua_ml'] or 0,
+            'min_agua_ml': estadisticas_db['min_agua_ml'] or 0,
+            'primer_riego_fecha': estadisticas_db['primer_riego_fecha'],
+            'ultimo_riego_fecha': estadisticas_db['ultimo_riego_fecha'],
+            'frecuencia_promedio_dias': round(frecuencia_promedio_dias, 1) if frecuencia_promedio_dias is not None else None,
+        }
+
+        # Serializamos el historial para la segunda parte de la respuesta
+        serializer = RiegoSerializer(historial_riegos_qs, many=True)
+        return Response({'estadisticas': estadisticas, 'historial_riegos': serializer.data})
 
 # -------- Riegos --------
 class RiegoViewSet(viewsets.ReadOnlyModelViewSet):

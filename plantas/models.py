@@ -18,7 +18,7 @@ class Planta(models.Model):
     nombre_personalizado = models.CharField(max_length=100)
     tipo_planta = models.CharField(max_length=10, choices=TIPO_PLANTA_CHOICES)
     tamano_planta = models.CharField(max_length=10, choices=TAMANO_CHOICES)
-    tamano_maceta_litros = models.FloatField(help_text="Tamaño en litros")
+    tamano_maceta_litros = models.FloatField(default=0.0, help_text="Tamaño en litros")
     fecha_ultimo_riego = models.DateField()
     en_floracion = models.BooleanField(default=False)
     google_calendar_event_id = models.CharField(max_length=255, blank=True, null=True, help_text="ID del evento de Google Calendar para el próximo riego")
@@ -26,7 +26,7 @@ class Planta(models.Model):
     # ---------- LÓGICA DE CÁLCULO ----------
     def calculos_riego(self, temperatura_externa=None):
        
-        litros = max(self.tamano_maceta_litros or 0, 0)
+        litros = max(self.tamano_maceta_litros, 0)
         size = self.tamano_planta
         en_flor = self.en_floracion
 
@@ -37,7 +37,7 @@ class Planta(models.Model):
 
         # Frecuencia base ~ litros/2 días (10L ≈ 5 días)
         # Ajustes por tamaño de planta y floración
-        base = litros / 2.0  # p.ej., 12L -> 6 días
+        base = litros / 2.0 if litros > 0 else 2.0  # p.ej., 12L -> 6 días
         size_offset = {'pequeña': -1.0, 'mediana': 0.0, 'grande': 1.0}.get(size, 0.0)
         stage_offset = -1.0 if en_flor else 0.0
         temp_offset = 0.0
