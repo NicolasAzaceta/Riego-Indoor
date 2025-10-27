@@ -169,16 +169,26 @@ function renderizarEstadisticas(stats) {
 
   if (!stats) return;
 
+  // Formateador para el agua total
+  const formatTotalWater = (ml) => {
+    if (ml >= 1000) {
+      return `${(ml / 1000).toFixed(2)} L`;
+    }
+    return `${ml} ml`;
+  };
+
   const cards = [
     { icon: "bi-calendar-range", title: "Frecuencia Promedio", value: `${(stats.frecuencia_promedio_dias || 0).toFixed(1)} días` },
     { icon: "bi-droplet-fill", title: "Riegos Totales", value: `${stats.total_riegos || 0} riegos` },
     { icon: "bi-water", title: "Agua Promedio", value: stats.promedio_agua_ml > 0 ? `${Math.round(stats.promedio_agua_ml)} ml` : 'N/A' },
+    { icon: "bi-bucket-fill", title: "Agua Total", value: stats.total_agua_ml > 0 ? formatTotalWater(stats.total_agua_ml) : 'N/A' },
     { icon: "bi-clock-history", title: "Último Riego", value: stats.ultimo_riego_fecha ? new Date(stats.ultimo_riego_fecha).toLocaleDateString() : 'N/A' },
   ];
 
   cards.forEach(card => {
     const col = document.createElement("div");
-    col.className = "col-md-3 col-6";
+    // Usamos una clase que se adapte a 5 elementos. 'col' permite que Bootstrap los distribuya.
+    col.className = "col-lg col-md-4 col-6";
     col.innerHTML = `
       <div class="card card-stat h-100">
         <div class="card-body text-center">
@@ -195,8 +205,15 @@ function renderizarEstadisticas(stats) {
 function renderizarGrafico(historial) {
   const ctx = document.getElementById("riegoChart").getContext("2d");
 
-  // Preparamos los datos para el gráfico (lo invertimos para que vaya de más antiguo a más nuevo)
-  const labels = historial.map(riego => new Date(riego.fecha).toLocaleDateString()).reverse();
+  // Preparamos los datos para el gráfico
+  // FIX: Corrección del bug de fecha por zona horaria.
+  // La fecha del backend (ej: "2023-10-27T01:00:00Z") se interpreta en el timezone del navegador,
+  // lo que puede hacer que se muestre el día anterior.
+  // Para solucionarlo, creamos la fecha usando los componentes (año, mes, día) en UTC
+  // para que Chart.js la interprete correctamente sin corrimientos de zona horaria.
+  const labels = historial.map(riego => {
+    return new Date(riego.fecha).toLocaleDateString('es-AR', { timeZone: 'UTC' });
+  }).reverse();
   const data = historial.map(riego => riego.cantidad_agua_ml).reverse();
 
   // Destruir gráfico anterior si existe para evitar solapamiento
@@ -241,7 +258,7 @@ function renderizarTablaHistorial(historial) {
   historial.forEach(riego => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${new Date(riego.fecha).toLocaleDateString()}</td>
+      <td>${new Date(riego.fecha).toLocaleDateString('es-AR', { timeZone: 'UTC' })}</td>
       <td>${riego.cantidad_agua_ml} ml</td>
       <td>${riego.comentarios || '<span class="text-white-50">Sin comentarios</span>'}</td>
     `;

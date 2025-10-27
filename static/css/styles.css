@@ -895,7 +895,7 @@ body.page-centered {
 
 .card-stat:hover {
     transform: translateY(-5px);
-    box-shadow: 0 0.5rem 1rem rgba(111, 66, 193, 0.2); /* Sombra violeta */
+    box-shadow: 0 0.75rem 1.5rem rgba(111, 66, 193, 0.35); /* Sombra violeta más intensa */
 }
 
 .chart-container {
