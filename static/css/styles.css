@@ -909,3 +909,32 @@ body.page-centered {
     transform: none;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15); /* Mantenemos la sombra original */
 }
+
+/* --- Estilo para resaltar el nombre de la marca con color --- */
+.brand-highlight {
+  color: #6f42c1; /* Violeta */
+  font-weight: 600; /* Un poco más de grosor para destacar */
+}
+
+/* --- Clases de utilidad para colores y texto --- */
+.text-violeta {
+  color: #6f42c1 !important;
+}
+
+.text-violeta-bold {
+  color: #6f42c1 !important;
+  font-weight: 600;
+}
+
+/* --- Estilos para el acordeón de funcionalidades en home --- */
+.accordion-container a {
+  cursor: pointer;
+}
+
+.accordion-icon {
+  transition: transform 0.3s ease;
+}
+
+.accordion-container a[aria-expanded="true"] .accordion-icon {
+  transform: rotate(180deg);
+}
