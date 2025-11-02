@@ -42,11 +42,30 @@
             loop
             autoplay>
         </lottie-player>
-        <h1 class="card-title h2 mb-3">Tu asistente de riego inteligente</h1>
+        <h1 class="card-title h2 mt-3 mb-3">¡Bienvenidos a <span class="brand-highlight">Riegum</span>!</h1>
+        <h4 class="mb-4">Tu asistente de riego inteligente</h4>
         <p class="card-text mb-4">
           Con Riegum, nunca más te olvidarás de regar tus plantas. Llevá un control detallado, calculá la cantidad de agua y la frecuencia ideal para cada una de ellas.
         </p>
-        <div class="d-grid gap-3">
+
+        <!-- Sección de Funcionalidades -->
+        <div class="text-start mb-4 accordion-container">
+          <a class="text-violeta-bold text-decoration-none d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#funcionalidadesCollapse" role="button" aria-expanded="false" aria-controls="funcionalidadesCollapse">
+            <h5 class="mb-0">Funcionalidades Principales</h5>
+            <i class="bi bi-chevron-down accordion-icon"></i>
+          </a>
+          <div class="collapse" id="funcionalidadesCollapse">
+            <ul class="list-unstyled pt-3">
+              <li class="mb-2"><i class="bi bi-calculator-fill me-2 text-violeta"></i><strong>Cálculos Inteligentes:</strong> Nuestro algoritmo considera el tipo de planta, maceta y temperatura para darte recomendaciones precisas.</li>
+              <li class="mb-2"><i class="bi bi-calendar-check-fill me-2 text-violeta"></i><strong>Integración con Google Calendar:</strong> Sincronizá tus recordatorios de riego directamente con tu calendario para no perderte ninguno.</li>
+              <li class="mb-2"><i class="bi bi-cloud-sun-fill me-2 text-violeta"></i><strong>Clima en Tiempo Real:</strong> Usá la temperatura de tu localidad para ajustar los cálculos y optimizar cada riego.</li>
+              <li><i class="bi bi-graph-up-arrow me-2 text-violeta"></i><strong>Historial y Estadísticas:</strong> Registrá cada riego y visualizá estadísticas para entender mejor el cuidado de tus plantas.</li>
+            </ul>
+          </div>
+        </div>
+        <!-- Fin Sección de Funcionalidades -->
+
+        <div class="d-grid gap-3 mt-4">
           <a href="/register/" class="btn btn-violeta-outline btn-lg">
             <i class="bi bi-person-plus-fill me-2"></i>Registrarse
           </a>
