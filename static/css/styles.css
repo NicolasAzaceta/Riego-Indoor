@@ -219,6 +219,33 @@ button:hover {
   z-index: 1;
 }
 
+/* Estilo para la tarjeta de "Agregar Planta" */
+.card-add-plant {
+  border: 3px dashed #6f42c1; /* Borde punteado violeta */
+  background-color: transparent !important; /* Fondo transparente */
+  color: #f8f9fa; /* Texto claro */
+  transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+  /* Hacemos la tarjeta más pequeña que su contenedor */
+  width: 80%; 
+  height: 12rem; /* Altura fija para que sea notablemente más chica */
+  padding: 1rem; /* Un padding interno más pequeño */
+}
+
+.card-add-plant:hover {
+  transform: scale(1.05);
+  background-color: rgba(111, 66, 193, 0.15) !important; /* Relleno violeta translúcido */
+  border-color: #9ACD32; /* Borde verde lima en hover */
+}
+
+.add-plant-icon {
+  font-size: 2.5rem; /* Ícono grande */
+  line-height: 1;
+  color: #6f42c1;
+  transition: color 0.3s ease;
+}
+.card-add-plant:hover .add-plant-icon {
+  color: #9ACD32; /* Ícono verde lima en hover */
+}
 
 /* Anulamos la animación de hover para la tarjeta de login/bienvenida */
 .card-login:hover {
