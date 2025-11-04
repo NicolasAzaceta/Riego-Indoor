@@ -31,20 +31,23 @@ async function regarPlanta(id, cantidadAgua) {
   }
 }
 
-function mostrarTarjetaBienvenida() {
+function crearTarjetaAgregarPlanta() {
   const container = document.getElementById("plant-list");
   if (!container) return;
-  container.innerHTML = `
-    <div class="col-12 d-flex justify-content-center">
-      <div class="card card-bienvenida text-center" style="max-width: 500px;">
-        <div class="card-body">
-          <h5 class="card-title mb-3">¡Bienvenido a Riegum!</h5>
-          <p class="card-text">
-            Aquí se mostrarán tus plantas una vez que las agregues.
-          </p>
+
+  const cardWrapper = document.createElement("div");
+  cardWrapper.className = "col-md-4 mb-3 d-flex align-items-center justify-content-center";
+  cardWrapper.id = "tarjeta-agregar-planta"; // Le damos un ID para poder observarla después
+  cardWrapper.innerHTML = `
+    <a href="/add/" class="card card-add-plant shadow-sm text-decoration-none d-flex align-items-center justify-content-center">
+      <div class="card-body text-center d-flex flex-column align-items-center justify-content-center gap-3">
+        <div class="add-plant-icon">
+          <i class="bi bi-plus-lg"></i>
         </div>
+        <h5 class="card-title text-violeta-bold mb-0">Agregar Nueva Planta</h5>
       </div>
-    </div>`;
+    </a>`;
+  container.appendChild(cardWrapper);
 }
 
 async function eliminarPlanta(id, cardElement) {
@@ -60,8 +63,8 @@ async function eliminarPlanta(id, cardElement) {
         cardElement.remove();
         // Después de eliminar, verificamos si el dashboard quedó vacío.
         const container = document.getElementById("plant-list");
-        if (container && container.children.length === 0) {
-          mostrarTarjetaBienvenida();
+        if (container && container.querySelectorAll('.card').length === 1) { // Si solo queda la tarjeta de agregar
+          // Ya no es necesario hacer nada, la tarjeta de agregar siempre está
         }
       }, 600);
 
@@ -114,11 +117,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     const plantas = await res.json();
     const container = document.getElementById("plant-list");
 
-    if (!plantas.length) {
-      mostrarTarjetaBienvenida();
-      return;
-    }
-
+    crearTarjetaAgregarPlanta(); // Siempre creamos la tarjeta de "Agregar" primero
+    
     plantas.forEach((planta, index) => {
       const card = document.createElement("div");
       card.className = "col-md-4 mb-3";
@@ -242,14 +242,30 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
+  // --- Lógica para el botón flotante/navbar ---
+  const tarjetaAgregar = document.getElementById('tarjeta-agregar-planta');
+  const btnAgregarNavbar = document.getElementById('btnAgregarPlantaNavbar');
+
+  if (tarjetaAgregar && btnAgregarNavbar) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        // Si la tarjeta de "Agregar" NO está visible en la pantalla...
+        if (!entry.isIntersecting) {
+          // ...mostramos el botón del navbar.
+          btnAgregarNavbar.classList.remove('d-none');
+        } else {
+          // ...y si SÍ está visible, lo ocultamos.
+          btnAgregarNavbar.classList.add('d-none');
+        }
+      });
+    }, { threshold: 0.1 }); // Se activa cuando el 10% de la tarjeta es visible
+
+    observer.observe(tarjetaAgregar);
+  }
+
   checkGoogleCalendarStatus();
 });
 
 
 const params = new URLSearchParams(window.location.search);
 const plantId = params.get("id");
-
-
-document.getElementById("btnAgregarPlanta").addEventListener("click", () => {
-  window.location.href = "/add/";
-});

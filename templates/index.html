@@ -33,6 +33,11 @@
     </div>
     
     <div id="nav-actions" class="d-flex align-items-center">
+      <!-- Botón para agregar planta (oculto por defecto, se muestra con scroll) -->
+      <a href="/add/" id="btnAgregarPlantaNavbar" class="btn btn-violeta-outline d-none me-3" title="Agregar planta">
+        <i class="bi bi-plus-lg"></i>
+      </a>
+
       <!-- Contenedor para el indicador de temperatura manual -->
       <div id="temp-externa-container" class="me-3"></div>
       <!-- Contenedor para los botones de Google Calendar -->
@@ -153,11 +158,6 @@
   <!-- IMPORTANTE: Reemplazá 'TU_GOOGLE_MAPS_API_KEY' con tu clave de API -->
   <script async defer src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&libraries=places&callback=initAutocomplete"></script>
 </body>
-
-<!-- Botón flotante para agregar planta (movido aquí para correcto posicionamiento) -->
-<button id="btnAgregarPlanta" class="btn btn-violeta-hover-verde shadow-lg" title="Agregar planta" style="position: fixed; bottom: 2rem; right: 2rem; z-index: 1030; display: flex; align-items: center; width: auto;">
-    <i class="bi bi-leaf me-2"></i> <span>Agregar planta</span>
-</button>
 
 <!-- Contenedor para las sugerencias de autocompletado (movido aquí para un posicionamiento global) -->
 <div id="suggestions-wrapper" class="list-group"></div>
