@@ -55,18 +55,32 @@ export async function checkGoogleCalendarStatus() {
 
 function updateGoogleCalendarButton(isLinked) {
   const btnGoogleCalendar = document.getElementById("btnGoogleCalendar");
+  const btnGoogleCalendarMobile = document.getElementById("google-calendar-container-mobile");
   const googleCalendarLinked = document.getElementById("googleCalendarLinked");
 
-  if (!btnGoogleCalendar || !googleCalendarLinked) return;
+  if (!btnGoogleCalendar || !googleCalendarLinked || !btnGoogleCalendarMobile) return;
 
   if (isLinked) {
     // Ocultar el botón de "Vincular" y mostrar el menú de "Vinculado"
     btnGoogleCalendar.classList.add('d-none');
     googleCalendarLinked.classList.remove('d-none');
+    // Clonamos el menú de "Vinculado" para el móvil
+    // NO clonamos el dropdown anidado. Creamos un botón simple para desvincular.
+    btnGoogleCalendarMobile.innerHTML = `
+      <a href="#" class="btn btn-rojo-outline w-100 btn-google-disconnect">
+        <i class="bi bi-calendar-x me-2"></i>Desvincular Calendario
+      </a>
+    `;
   } else {
     // Mostrar el botón de "Vincular" y ocultar el menú de "Vinculado"
     btnGoogleCalendar.classList.remove('d-none');
     googleCalendarLinked.classList.add('d-none');
+    // Clonamos el botón de "Vincular" para el móvil
+    const mobileLinkButton = btnGoogleCalendar.cloneNode(true);
+    mobileLinkButton.id = 'btnGoogleCalendarMobile'; // Cambiamos el ID para evitar duplicados
+    mobileLinkButton.classList.add('w-100'); // Hacemos que ocupe todo el ancho
+    btnGoogleCalendarMobile.innerHTML = '';
+    btnGoogleCalendarMobile.appendChild(mobileLinkButton);
   }
 }
 
@@ -83,9 +97,10 @@ function getClimaKey() {
 }
 
 function actualizarDisplayTemperaturaExterna(data) {
-  const container = document.getElementById('temp-externa-container');
-  if (!container) return;
+  const containerDesktop = document.getElementById('temp-externa-container');
+  const containerMobile = document.getElementById('temp-externa-container-mobile');
 
+  [containerDesktop, containerMobile].forEach(container => {
   // Limpiamos el contenedor
   container.innerHTML = '';
 
@@ -120,17 +135,19 @@ function actualizarDisplayTemperaturaExterna(data) {
   const tempDisplay = document.createElement('div');
   tempDisplay.className = 'btn-group';
   tempDisplay.innerHTML = displayHTML + `
-      <button type="button" id="btnQuitarTemp" class="btn btn-violeta-outline" title="Dejar de usar temperatura manual">
+      <button type="button" class="btn btn-violeta-outline btn-quitar-temp" title="Dejar de usar temperatura manual">
           <i class="bi bi-x-lg"></i>
       </button>
   `;
   container.appendChild(tempDisplay);
 
-  document.getElementById('btnQuitarTemp').addEventListener('click', () => {
-    if (keyToRemove) localStorage.removeItem(keyToRemove);
-    actualizarDisplayTemperaturaExterna(null);
-    mostrarToast(toastMessage, "info");
-    setTimeout(() => window.location.reload(), 1500);
+  // Agregamos el listener a todos los botones de quitar temperatura
+    container.querySelectorAll('.btn-quitar-temp').forEach(btn => btn.addEventListener('click', () => {
+      if (keyToRemove) localStorage.removeItem(keyToRemove);
+      actualizarDisplayTemperaturaExterna(null);
+      mostrarToast(toastMessage, "info");
+      setTimeout(() => window.location.reload(), 1500);
+    }));
   });
 }
 
@@ -190,13 +207,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
   const btnLogout = document.getElementById("btnLogout");
+  const btnLogoutMobile = document.getElementById("btnLogoutMobile");
+
+  const handleLogout = (e) => {
+    e.preventDefault();
+    mostrarToast("👋 ¡Sesión cerrada! ¡Hasta luego!", "info");
+    setTimeout(() => logoutUsuario(), 1500);
+  };
+
   if (btnLogout) {
-    btnLogout.addEventListener("click", (e) => {
-      e.preventDefault();
-      mostrarToast("👋 ¡Sesión cerrada! ¡Hasta luego!", "info");
-      setTimeout(() => logoutUsuario(), 1500);
-    });
+    btnLogout.addEventListener("click", handleLogout);
   }
+  if (btnLogoutMobile) {
+    btnLogoutMobile.addEventListener("click", handleLogout);
+  }
+
+  // Re-asignar listeners a los elementos clonados
+  document.body.addEventListener('click', function(e) {
+    if (e.target && (e.target.id === 'btnGoogleCalendarMobile' || e.target.closest('#btnGoogleCalendarMobile'))) {
+      e.preventDefault();
+      iniciarVinculacionGoogle();
+    }
+    // Usamos delegación de eventos con una clase para que funcione en desktop y móvil
+    if (e.target.classList.contains('btn-google-disconnect') || e.target.closest('.btn-google-disconnect')) {
+      e.preventDefault();
+      const modal = new bootstrap.Modal(document.getElementById("modalConfirmarDesvincular"));
+      modal.show();
+    }
+  });
 
   const btnGoogleCalendar = document.getElementById("btnGoogleCalendar");
   if (btnGoogleCalendar) {
@@ -206,23 +244,51 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  const btnGoogleDisconnect = document.getElementById("btnGoogleDisconnect");
-  if (btnGoogleDisconnect) {
-    btnGoogleDisconnect.addEventListener("click", async (e) => {
-      e.preventDefault();
-      if (!confirm("¿Estás seguro de que querés desvincular tu calendario? Se intentarán eliminar los eventos de riego ya creados.")) {
-        return;
-      }
-      try {
-        const res = await fetchProtegido('/api/google-calendar-disconnect/', { method: 'POST' });
-        if (!res.ok) throw new Error('Error en el servidor');
-        const data = await res.json();
-        mostrarToast(`✅ ${data.message}`, "success");
-        setTimeout(() => window.location.reload(), 1500); // Recargamos para refrescar el estado
-      } catch (error) {
-        mostrarToast("❌ No se pudo desvincular el calendario.", "danger");
-      }
+  async function desvincularGoogleCalendar(btn, modal) {
+    // 1. Deshabilitar botón y mostrar estado de carga
+    btn.disabled = true;
+    btn.innerHTML = `
+      <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+      Desvinculando...
+    `;
+
+    try {
+      const res = await fetchProtegido('/api/google-calendar-disconnect/', { method: 'POST' });
+      if (!res.ok) throw new Error('Error en el servidor');
+      const data = await res.json();
+      mostrarToast(`✅ ${data.message}`, "success");
+      setTimeout(() => window.location.reload(), 1500); // Recargamos para refrescar el estado
+    } catch (error) {
+      mostrarToast("❌ No se pudo desvincular el calendario.", "danger");
+    } finally {
+      // 2. Ocultar el modal
+      modal.hide();
+      // 3. Restaurar el botón a su estado original (incluso si hay un error)
+      setTimeout(() => { // Damos un pequeño delay para que el modal se cierre suavemente
+        btn.disabled = false;
+        btn.innerHTML = 'Desvincular';
+      }, 500);
+    }
+  }
+
+  const btnConfirmar = document.getElementById("btnConfirmarDesvincular");
+  if (btnConfirmar) {
+    btnConfirmar.addEventListener("click", (e) => {
+      const modalInstance = bootstrap.Modal.getInstance(document.getElementById("modalConfirmarDesvincular"));
+      desvincularGoogleCalendar(btnConfirmar, modalInstance);
     });
+  }
+
+  // Al cargar la página, revisamos si hay una temperatura (manual o de clima) guardada
+  const tempKey = getTemperaturaKey();
+  const temperaturaGuardada = tempKey ? localStorage.getItem(tempKey) : null;
+  const climaKey = getClimaKey();
+  const climaGuardado = climaKey ? localStorage.getItem(climaKey) : null;
+
+  if (temperaturaGuardada) {
+    actualizarDisplayTemperaturaExterna({ type: 'manual', value: temperaturaGuardada });
+  } else if (climaGuardado) {
+    actualizarDisplayTemperaturaExterna(JSON.parse(climaGuardado));
   }
 
   // Verificamos el estado de la vinculación al cargar la página.
@@ -298,17 +364,5 @@ document.addEventListener("DOMContentLoaded", () => {
         mostrarToast(`❌ Error al buscar el clima: ${error.message}`, "danger");
       }
     });
-  }
-
-  // Al cargar la página, revisamos si hay una temperatura (manual o de clima) guardada
-  const tempKey = getTemperaturaKey();
-  const temperaturaGuardada = tempKey ? localStorage.getItem(tempKey) : null;
-  const climaKey = getClimaKey();
-  const climaGuardado = climaKey ? localStorage.getItem(climaKey) : null;
-
-  if (temperaturaGuardada) {
-    actualizarDisplayTemperaturaExterna({ type: 'manual', value: temperaturaGuardada });
-  } else if (climaGuardado) {
-    actualizarDisplayTemperaturaExterna(JSON.parse(climaGuardado));
   }
 });

@@ -26,42 +26,65 @@
         <i class="bi bi-chevron-double-left"></i>
       </button>
       <!-- Contenedor del logo con posicionamiento relativo -->
-      <div style="position: relative; height: 30px;">
-        <!-- El logo se posiciona absolutamente, permitiendo que se desborde sin afectar la altura del nav -->
-        <img src="{% static 'assets/img/RIEGUMICONO.png' %}" alt="Logo Riegum" style="position: absolute; top: 50%; transform: translateY(-50%); width: 150px; height: auto;">
-      </div>
+      <a href="/dashboard/">
+        <div style="position: relative; height: 30px;">
+          <!-- El logo se posiciona absolutamente, permitiendo que se desborde sin afectar la altura del nav -->
+          <img src="{% static 'assets/img/RIEGUMICONO.png' %}" alt="Logo Riegum" style="position: absolute; top: 50%; transform: translateY(-50%); width: 150px; height: auto;">
+        </div>
+      </a>
     </div>
     
-    <div id="nav-actions" class="d-flex align-items-center">
-      <!-- Botón para agregar planta (oculto por defecto, se muestra con scroll) -->
+    <!-- ACCIONES PARA ESCRITORIO (Visible en lg y superior) -->
+    <div id="nav-actions-desktop" class="d-none d-lg-flex align-items-center">
       <a href="/add/" id="btnAgregarPlantaNavbar" class="btn btn-violeta-outline d-none me-3" title="Agregar planta">
         <i class="bi bi-plus-lg"></i>
       </a>
-
-      <!-- Contenedor para el indicador de temperatura manual -->
       <div id="temp-externa-container" class="me-3"></div>
-      <!-- Contenedor para los botones de Google Calendar -->
       <div id="google-calendar-container" class="me-3">
-        <!-- Botón para vincular (visible por defecto) -->
         <a href="#" id="btnGoogleCalendar" class="btn btn-violeta-outline">
-        <i class="bi bi-calendar-plus me-1"></i>Vincular Calendario
+          <i class="bi bi-calendar-plus me-1"></i>Vincular Calendario
         </a>
-        <!-- Menú desplegable para desvincular (oculto por defecto) -->
         <div id="googleCalendarLinked" class="btn-group d-none">
           <button type="button" class="btn btn-violeta-solid" disabled><i class="bi bi-check-circle-fill me-1"></i> Vinculado</button>
           <button type="button" class="btn btn-violeta-outline dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
             <span class="visually-hidden">Toggle Dropdown</span>
           </button>
-          <ul class="dropdown-menu dropdown-menu-end"><li class="li-animado"><a class="dropdown-item" href="#" id="btnGoogleDisconnect"><i class="bi bi-calendar-x me-2"></i>Desvincular Calendario</a></li></ul>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li class="li-animado"><a class="dropdown-item btn-google-disconnect" href="#"><i class="bi bi-calendar-x me-2"></i>Desvincular Calendario</a></li>
+          </ul>
         </div>
       </div>
-      
-      <!-- Menú de usuario -->
       <div class="dropdown">
         <button class="btn btn-violeta-outline dropdown-toggle d-flex align-items-center" type="button" id="menuUsuario" data-bs-toggle="dropdown" aria-expanded="false">
           <i class="bi bi-person-circle me-2"></i>
         </button>
-        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="menuUsuario"><li class="li-animado"><a class="dropdown-item" id="btnLogout" href="javascript:void(0);"><i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión</a></li></ul>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="menuUsuario">
+          <li class="li-animado"><a class="dropdown-item" id="btnLogout" href="javascript:void(0);"><i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- MENÚ HAMBURGUESA PARA MÓVIL (Visible en md e inferior) -->
+    <div class="dropdown d-lg-none">
+      <button class="btn btn-white-outline" type="button" id="mobileMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bi bi-list"></i>
+      </button>
+      <div class="dropdown-menu dropdown-menu-end p-3 mobile-actions-dropdown" aria-labelledby="mobileMenuButton">
+        <!-- Los mismos elementos de acción, pero para móvil -->
+        <div id="nav-actions-mobile" class="d-flex flex-column align-items-stretch gap-3">
+          <!-- Botón para agregar planta (se clona el comportamiento con JS) -->
+          <a href="/add/" id="btnAgregarPlantaNavbarMobile" class="btn btn-violeta-outline d-none" title="Agregar planta">
+            <i class="bi bi-plus-lg me-2"></i> Agregar Planta
+          </a>
+          <!-- Contenedor para el indicador de temperatura -->
+          <div id="temp-externa-container-mobile"></div>
+          <!-- Contenedor para los botones de Google Calendar -->
+          <div id="google-calendar-container-mobile"></div>
+          <!-- Botón de cerrar sesión -->
+          <a class="btn btn-rojo-outline" id="btnLogoutMobile" href="javascript:void(0);">
+            <i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -133,6 +156,24 @@
           <div class="modal-footer justify-content-end">
             <button type="button" class="btn btn-violeta-outline" data-bs-dismiss="modal">Cancelar</button>
             <button type="button" class="btn btn-rojo-outline" id="btnConfirmarEliminar">Eliminar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de confirmación para desvincular calendario -->
+    <div class="modal fade" id="modalConfirmarDesvincular" tabindex="-1" aria-labelledby="modalConfirmarDesvincularLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header justify-content-center">
+            <h5 class="modal-title text-center w-100" id="modalConfirmarDesvincularLabel">¿Desvincular Calendario?</h5>
+          </div>
+          <div class="modal-body text-center">
+            Se eliminarán los eventos de riego ya creados en tu Google Calendar.
+          </div>
+          <div class="modal-footer justify-content-end">
+            <button type="button" class="btn btn-violeta-outline" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-rojo-outline" id="btnConfirmarDesvincular">Desvincular</button>
           </div>
         </div>
       </div>

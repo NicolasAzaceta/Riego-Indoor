@@ -15,11 +15,13 @@
 <body>
   <nav class="navbar mb-4">
   <div class="container-fluid d-flex justify-content-between align-items-center">
-    <!-- Contenedor del logo con posicionamiento relativo -->
-    <div style="position: relative; height: 30px;">
-      <!-- El logo se posiciona absolutamente, permitiendo que se desborde sin afectar la altura del nav -->
-      <img src="{% static 'assets/img/RIEGUMICONO.png' %}" alt="Logo Riegum" style="position: absolute; top: 50%; transform: translateY(-50%); width: 150px; height: auto;">
-    </div>
+    <a href="/dashboard/">
+      <!-- Contenedor del logo con posicionamiento relativo -->
+      <div style="position: relative; height: 30px;">
+        <!-- El logo se posiciona absolutamente, permitiendo que se desborde sin afectar la altura del nav -->
+        <img src="{% static 'assets/img/RIEGUMICONO.png' %}" alt="Logo Riegum" style="position: absolute; top: 50%; transform: translateY(-50%); width: 150px; height: auto;">
+      </div>
+    </a>
 
     <div class="dropdown">
       <button class="btn btn-violeta-outline dropdown-toggle d-flex align-items-center" type="button" id="menuUsuario" data-bs-toggle="dropdown" aria-expanded="false">
