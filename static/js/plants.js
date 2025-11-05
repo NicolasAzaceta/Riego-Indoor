@@ -170,43 +170,53 @@ document.addEventListener("DOMContentLoaded", async () => {
       </button>
     </div>
 `;
-      const btnRegar = tarjeta.querySelector(".btn-regar");      btnRegar.addEventListener("click", async () => {
-        const animacionLocal = tarjeta.querySelector(".animacion-local");
-        const player = animacionLocal.querySelector("lottie-player");
+      const btnRegar = tarjeta.querySelector(".btn-regar");
+      btnRegar.addEventListener("click", async () => {
+        // 1. Deshabilitamos el botón y mostramos el spinner
+        btnRegar.disabled = true;
+        btnRegar.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>`;
 
-        animacionLocal.classList.remove("oculto");
-        player.stop();
-        player.play();
+        try {
+          const animacionLocal = tarjeta.querySelector(".animacion-local");
+          const player = animacionLocal.querySelector("lottie-player");
 
-        setTimeout(() => {
-          animacionLocal.classList.add("oculto");
-        }, 2000);
+          animacionLocal.classList.remove("oculto");
+          player.stop();
+          player.play();
 
-        // Corregimos: regarPlanta ahora devuelve el estado actualizado.
-        const riegoExitoso = await regarPlanta(planta.id, planta.recommended_water_ml);
-        if (!riegoExitoso) return; // Si el riego falló, no continuamos.
+          setTimeout(() => {
+            animacionLocal.classList.add("oculto");
+          }, 2000);
 
-        const data = await obtenerPlanta(planta.id); // Obtenemos los datos completos y recalculados de la planta.
-        if (!data) return;
+          const riegoExitoso = await regarPlanta(planta.id, planta.recommended_water_ml);
+          if (!riegoExitoso) return; // Si el riego falló, no continuamos.
 
-        const textoRiego = tarjeta.querySelector(".card-text");
-        textoRiego.innerHTML = `🌱 <strong>${data.estado_texto}</strong>`;
+          const data = await obtenerPlanta(planta.id);
+          if (!data) return;
 
-        // Limpiamos todas las clases de estado antes de aplicar la nueva
-        tarjeta.classList.remove("estado-verde", "estado-amarillo", "estado-naranja");
+          const textoRiego = tarjeta.querySelector(".card-text");
+          textoRiego.innerHTML = `🌱 <strong>${data.estado_texto}</strong>`;
 
-        // Aplicamos la clase correcta según el nuevo estado
-        switch (data.estado_riego) {
-          case 'no_necesita':
-            tarjeta.classList.add("estado-verde");
-            break;
-          case 'pronto':
-            tarjeta.classList.add("estado-amarillo");
-            break;
-          // No hay caso para 'hoy' porque después de regar, nunca será 'hoy'.
+          tarjeta.classList.remove("estado-verde", "estado-amarillo", "estado-naranja");
+
+          switch (data.estado_riego) {
+            case 'no_necesita':
+              tarjeta.classList.add("estado-verde");
+              break;
+            case 'pronto':
+              tarjeta.classList.add("estado-amarillo");
+              break;
+          }
+
+          mostrarToast("🌿 ¡Planta regada con éxito!");
+        } catch (error) {
+          console.error("Error en el proceso de riego desde el dashboard:", error);
+          // El toast de error ya se muestra dentro de regarPlanta
+        } finally {
+          // 3. Siempre, al final, restauramos el botón
+          btnRegar.disabled = false;
+          btnRegar.innerHTML = `<i class="bi bi-droplet me-1"></i>Regar`;
         }
-
-        mostrarToast("🌿 ¡Planta regada con éxito!");
       });
 
       const btnVerDetalle = tarjeta.querySelector(".btn-ver-detalle");

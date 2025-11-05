@@ -36,82 +36,147 @@
       <h2 class="text-center m-0 fw-bold" id="plant-title">Detalle Planta</h2>
     </div>
 
-    <ul class="list-group mb-4" id="plant-details">
-      
-      <li class="list-group-item">
-          <strong>Nombre:</strong> 
-          <span id="nombre"></span>
-          <input type="text" id="input-nombre" class="form-control d-none mt-2" />
-          <button id="editar-nombre" class="btn btn-sm btn-violeta-outline float-end align-items-center" >
-            <i class="bi bi-pencil"></i>
-          </button>
-      </li>
-    
-      <li class="list-group-item">
-        <strong>Tipo:</strong>
-        <span id="tipo"></span>
-      </li>
-        
+    <div class="row g-4 mb-4">
+      <!-- Tarjeta 1: Ficha de la Planta (Editable) -->
+      <div class="col-lg-6">
+        <div class="card h-100 card-ficha-planta">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="card-title mb-0"><i class="bi bi-info-circle me-2"></i>Ficha de la Planta</h5>
+              <div>
+                <button id="btn-editar-ficha" class="btn btn-sm btn-violeta-outline me-2" title="Editar ficha">
+                  <i class="bi bi-pencil"></i> <span class="d-none d-md-inline">Editar</span>
+                </button>
+                <button id="btn-guardar-ficha" class="btn btn-sm btn-violeta-solid d-none me-2" title="Guardar cambios">
+                  <i class="bi bi-save"></i> <span class="d-none d-md-inline">Guardar</span>
+                </button>
+                <button id="btn-cancelar-ficha" class="btn btn-sm btn-rojo-outline d-none" title="Cancelar edición">
+                  <i class="bi bi-x-lg"></i> <span class="d-none d-md-inline">Cancelar</span>
+                </button>
+              </div>
+            </div>
 
-      <li class="list-group-item">
-        <strong>Tamaño planta:</strong> 
-        <span id="tamano"></span>
-        <select class="form-select d-none" id="input-tamano" type="text">
-          <option value>Seleccionar</option>
-          <option value="Pequeña">Pequeña</option>
-          <option value="Mediana">Mediana</option>
-          <option value="Grande">Grande</option>
-        </select>
-        <button id="editar-tamano" class="btn btn-sm btn-violeta-outline float-end align-items-center">
-          <i class="bi bi-pencil"></i>
-        </button>
-      </li>
+            <div class="mb-3">
+              <strong>Nombre:</strong>
+              <span id="nombre" class="d-block"></span>
+              <input type="text" id="input-nombre" class="form-control d-none mt-2" />
+            </div>
+            <div class="mb-3">
+              <strong>Tipo:</strong>
+              <span id="tipo" class="d-block"></span>
+              <!-- No hay input para tipo, ya que no es editable -->
+            </div>
+            <div class="mb-3">
+              <strong>Tamaño planta:</strong>
+              <span id="tamano" class="d-block"></span>
+              <select class="form-select d-none mt-2" id="input-tamano">
+                <option value="Pequeña">Pequeña</option>
+                <option value="Mediana">Mediana</option>
+                <option value="Grande">Grande</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <strong>Tamaño maceta:</strong>
+              <span id="maceta" class="d-block"></span>
+              <div class="input-group d-none mt-2" id="input-group-maceta">
+                <input type="number" id="input-maceta" class="form-control" />
+                <span class="input-group-text">litros</span>
+              </div>
+            </div>
+            <div class="mb-3">
+              <strong>Último riego:</strong>
+              <span id="ultimoRiego" class="d-block"></span>
+              <input type="date" class="form-control d-none mt-2" id="input-ultimoRiego" />
+            </div>
+            <div>
+              <strong>¿En floración?:</strong>
+              <span id="enFloracion" class="d-block"></span>
+              <select class="form-select d-none mt-2" id="input-enFloracion">
+                <option value="Si">Si</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <li class="list-group-item">
-        <strong>Tamaño maceta:</strong>
-        <span id="maceta"></span>
-        <span id="unidad-maceta">litros</span>
-        <input type="text" id="input-maceta" class="form-control d-none mt-2" />
-        <button id="editar-maceta" class="btn btn-sm btn-violeta-outline float-end align-items-center">
-          <i class="bi bi-pencil"></i>
-        </button>      
-      </li>
+      <!-- Tarjeta 2: Galería de Fotos -->
+      <div class="col-lg-6">
+        <div class="card h-100 card-galeria-fotos">
+          <div class="card-body d-flex flex-column">
+            <h5 class="card-title mb-3"><i class="bi bi-images me-2"></i>Galería de Fotos</h5>
+            
+            <!-- Carrusel de Imágenes -->
+            <div id="plant-carousel" class="carousel slide mb-3 flex-grow-1 d-flex align-items-center justify-content-center" data-bs-ride="carousel">
+              <div class="carousel-inner">
+                <!-- Las imágenes se cargarán aquí dinámicamente -->
+              </div>
+              <button class="carousel-control-prev" type="button" data-bs-target="#plant-carousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Anterior</span>
+              </button>
+              <button class="carousel-control-next" type="button" data-bs-target="#plant-carousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Siguiente</span>
+              </button>
+            </div>
 
-      <li class="list-group-item">
-        <strong>Último riego:</strong>
-        <span id="ultimoRiego"></span>
-        <input type="date" class="form-control d-none" id="input-ultimoRiego" />
-        <button id="editar-ultimoRiego" class="btn btn-sm btn-violeta-outline float-end align-items-center">
-          <i class="bi bi-pencil"></i>
-        </button>
-      </li>
+            <!-- Área de Carga de Imágenes (Híbrida) -->
+            <div id="upload-area" class="upload-area text-center p-4 border rounded mt-auto">
+              <input type="file" id="file-input" multiple accept="image/*" class="d-none">
+              <label for="file-input" class="d-block" style="cursor: pointer;">
+                <i class="bi bi-cloud-arrow-up display-4 text-violeta"></i>
+                <p class="mb-0 text-muted">Arrastrá tus fotos acá o <strong class="text-violeta">hacé clic para seleccionar</strong></p>
+              </label>
+              <div id="upload-progress" class="progress mt-3 d-none">
+                <div class="progress-bar bg-violeta" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <li class="list-group-item">
-        <strong>¿En floración?:</strong> 
-        <span id="enFloracion"></span>
-         <select class="form-select d-none" id="input-enFloracion" type="text">
-          <option value>Seleccionar</option>
-          <option value="Si">Si</option>
-          <option value="No">No</option>
-        </select>
-        <button id="editar-enFloracion" class="btn btn-sm btn-violeta-outline float-end align-items-center">
-          <i class="bi bi-pencil"></i>
-        </button>
-      </li>
+      <!-- Tarjeta 3: Estado del Riego -->
+      <div class="col-lg-6">
+        <div class="card h-100 card-estado-riego">
+          <div class="card-body">
+            <h5 class="card-title mb-3"><i class="bi bi-droplet-half me-2"></i>Estado del Riego</h5>
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <strong>Estado:</strong> <span id="estadoRiego" class="badge"></span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <strong>Próximo riego:</strong> <span id="proximoRiego"></span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <strong>Días restantes:</strong> <span id="diasRestantes" class="badge"></span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <strong>Agua recomendada:</strong> <span id="recomendado"></span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <strong>Frecuencia de riego:</strong> <span id="frecuencia"></span>
+              </li>
+            </ul>
+            <div class="d-grid mt-4">
+              <button class="btn btn-celeste-outline btn-lg" id="btn-regar-detail">
+                <i class="bi bi-droplet me-2"></i>Regar Ahora
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <li class="list-group-item"><strong>Estado:</strong> <span id="estadoRiego"></span></li>
-
-      <li class="list-group-item"><strong>Suplementos sugeridos:</strong> <span id="sugerencia"></span></li>
-
-      <li class="list-group-item"><strong>Agua recomendada:</strong> <span id="recomendado"></span></li>
-
-      <li class="list-group-item"><strong>Frecuencia de riego:</strong> <span id="frecuencia"></span></li>
-
-      <li class="list-group-item"><strong>Próximo riego:</strong> <span id="proximoRiego"></span></li>
-
-      <li class="list-group-item"><strong>Días restantes:</strong> <span id="diasRestantes"></span></li>
-
-    </ul>
+      <!-- Tarjeta 4: Suplementos Sugeridos -->
+      <div class="col-lg-6">
+        <div class="card h-100 card-suplementos">
+          <div class="card-body">
+            <h5 class="card-title mb-3"><i class="bi bi-lightbulb me-2"></i>Suplementos Sugeridos</h5>
+            <p id="sugerencia" class="card-text"></p>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Tarjetas de Estadísticas (Nueva Sección) -->
     <div class="row g-3 mb-5" id="stats-cards-container">
@@ -119,7 +184,7 @@
     </div>
 
     <!-- Gráfico y Tabla de Historial (Nueva Sección) -->
-    <div class="card card-custom bg-dark text-white mb-4">
+    <div class="card card-custom bg-dark text-white mb-4" id="historial-card">
       <div class="card-body">
         <h5 class="card-title mb-3"><i class="bi bi-graph-up me-2"></i>Historial de Riego</h5>
         
@@ -151,16 +216,17 @@
       </div>
     </div>
 
-    <div id="toast-container" class="position-fixed start-50 translate-middle-x p-3" style="top: 7rem; z-index: 9999">
-      <div id="toast" class="toast fade align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="d-flex">
-          <div class="toast-body" id="toast-body"></div>          
-        </div>
-      </div>
-    </div>
-
     <div class="d-grid mt-3" style="padding-bottom: 12px;">
       <button id="guardarCambios" class="btn btn-dark boton-flotante-centro d-none">Guardar cambios</button>   
+    </div>
+
+    <!-- Toast de éxito/error (copiado de index.html) -->
+    <div id="toast-container" class="position-fixed start-50 translate-middle-x p-3" style="top: 7rem; z-index: 9999">
+      <div id="toast" class="toast fade align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+          <div class="toast-body" id="toast-body"></div>
+        </div>
+      </div>
     </div>
 
   </div>
