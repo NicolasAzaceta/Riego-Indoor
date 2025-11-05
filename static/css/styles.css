@@ -195,7 +195,8 @@ button:hover {
   /* overflow: visible; */
 }
 
-.card:hover {
+/* Aplicamos el hover solo a las tarjetas dentro de la lista de plantas del dashboard */
+#plant-list .card:hover {
   transform: scale(1.05);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
@@ -947,15 +948,6 @@ body.page-centered {
   border: none; /* Sin borde por defecto */
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.card-ficha-planta:hover,
-.card-galeria-fotos:hover,
-.card-estado-riego:hover,
-.card-suplementos:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
 .card-ficha-planta .card-title,
