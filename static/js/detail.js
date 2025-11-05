@@ -1,175 +1,210 @@
 import { fetchProtegido } from "./auth.js";
-import { mostrarToast } from "./api.js";
-let planta = null;
+import { mostrarToast, logoutUsuario } from "./api.js";
 
-function renderizarDetalle(planta) {
-  document.getElementById("nombre").textContent = planta.nombre_personalizado;
-  document.getElementById("tipo").textContent = planta.tipo_planta;
-  document.getElementById("tamano").textContent = planta.tamano_planta;
-  document.getElementById("maceta").textContent = `${planta.tamano_maceta_litros} `;
-  document.getElementById("ultimoRiego").textContent = planta.fecha_ultimo_riego;
-  document.getElementById("enFloracion").textContent = planta.en_floracion ? "Si" : "No";
-  document.getElementById("estadoRiego").textContent = planta.estado_texto;
-  document.getElementById("sugerencia").textContent = planta.sugerencia_suplementos;
-  document.getElementById("recomendado").textContent = `${planta.recommended_water_ml} ml`;
-  document.getElementById("frecuencia").textContent = `${planta.frequency_days} días`;
-  document.getElementById("proximoRiego").textContent = planta.next_watering_date;
-  document.getElementById("diasRestantes").textContent = planta.days_left;
-}
+let currentPlantData = null; // Para almacenar los datos de la planta y revertir cambios
+let isEditMode = false; // Estado del modo de edición
 
-function configurarBotonVolver(idBoton, destino) {
-  const boton = document.getElementById(idBoton);
-  if (boton) {
-    boton.addEventListener("click", () => window.location.href = destino);
-  }
-}
-
-configurarBotonVolver("btn-volver", "/dashboard/");
-
-function habilitarEdicion(campo, boton) {
-  document.getElementById("guardarCambios").classList.remove("d-none");
-
-  const litros = document.getElementById("unidad-maceta");
-  if (campo === "maceta" && litros) {
-    litros.classList.add("d-none");
-  }
-
-  const span = document.getElementById(campo);
-  const input = document.getElementById(`input-${campo}`);
-
-  if (!span || !input || !boton) {
-    console.warn(`Elemento no encontrado para campo: ${campo}`);
-    return;
-  }
-
-  input.value = span.textContent.trim();
-  span.classList.add("d-none");
-  input.classList.remove("d-none");
-  boton.classList.add("d-none");
-
-  if (campo === "maceta" && litros) {
-    litros.classList.remove("d-none");
-  }
-}
-
-function obtenerIdDesdeURL() {
+function getPlantIdFromURL() {
   const params = new URLSearchParams(window.location.search);
   return params.get("id");
 }
 
-document.getElementById('guardarCambios').addEventListener('click', async () => {
-  const idPlanta = obtenerIdDesdeURL();
+function getEstadoBadgeClass(estado) {
+  switch (estado) {
+    case 'no_necesita': return 'bg-success';
+    case 'pronto': return 'bg-warning text-dark';
+    case 'hoy': return 'bg-danger';
+    default: return 'bg-secondary';
+  }
+}
 
-  const camposMap = {
-    nombre: "nombre_personalizado",
-    tipo: "tipo_planta",
-    tamano: "tamano_planta",
-    maceta: "tamano_maceta_litros",
-    ultimoRiego: "fecha_ultimo_riego",
-    enFloracion: "en_floracion",
-    estadoRiego: "estado_texto",
-    sugerencia: "sugerencia_suplementos"
-  };
+function renderizarDetalle(planta) {
+  currentPlantData = planta; // Guardamos los datos originales
 
-  const payload = { ...planta }; // ✅ mantiene todos los campos obligatorios
+  // --- Ficha de la Planta ---
+  document.getElementById('plant-title').textContent = planta.nombre_personalizado;
+  document.getElementById('nombre').textContent = planta.nombre_personalizado;
+  document.getElementById('tipo').textContent = planta.tipo_planta;
+  document.getElementById('tamano').textContent = planta.tamano_planta;
+  document.getElementById('maceta').textContent = `${planta.tamano_maceta_litros} litros`;
+  document.getElementById('ultimoRiego').textContent = planta.fecha_ultimo_riego ? new Date(planta.fecha_ultimo_riego).toLocaleDateString('es-AR', { timeZone: 'UTC' }) : 'N/A';
+  document.getElementById('enFloracion').textContent = planta.en_floracion ? 'Sí' : 'No';
 
-  Object.entries(camposMap).forEach(([campoFrontend, campoBackend]) => {
-    const input = document.getElementById(`input-${campoFrontend}`);
-    if (input && !input.classList.contains('d-none')) {
-      payload[campoBackend] = campoFrontend === "enFloracion"
-        ? input.value.trim().toLowerCase() === "si"
-        : input.value.trim();
+  // Rellenamos los inputs solo una vez para la edición, no en cada renderizado.
+  document.getElementById('input-nombre').value = planta.nombre_personalizado;
+  document.getElementById('input-tamano').value = planta.tamano_planta;
+  document.getElementById('input-maceta').value = planta.tamano_maceta_litros;
+  document.getElementById('input-ultimoRiego').value = planta.fecha_ultimo_riego;
+  document.getElementById('input-enFloracion').value = planta.en_floracion ? 'Si' : 'No';
+
+  // --- Estado del Riego ---
+  const estadoRiegoSpan = document.getElementById('estadoRiego');
+  estadoRiegoSpan.textContent = planta.estado_texto;
+  estadoRiegoSpan.className = `badge ${getEstadoBadgeClass(planta.estado_riego)}`;
+  const diasRestantesSpan = document.getElementById('diasRestantes');
+  diasRestantesSpan.className = `badge ${getEstadoBadgeClass(planta.estado_riego)}`; // Reutilizamos la misma clase de color
+
+  document.getElementById('proximoRiego').textContent = planta.next_watering_date ? new Date(planta.next_watering_date).toLocaleDateString('es-AR', { timeZone: 'UTC' }) : 'N/A';
+  document.getElementById('diasRestantes').textContent = planta.days_left !== null ? `${planta.days_left} días` : 'N/A';
+  document.getElementById('recomendado').textContent = `${planta.recommended_water_ml} ml`;
+  document.getElementById('frecuencia').textContent = `Cada ${planta.frequency_days} días`;
+
+  // --- Suplementos Sugeridos ---
+  document.getElementById('sugerencia').textContent = planta.sugerencia_suplementos || 'No hay sugerencias.';
+
+  // --- Galería de Fotos ---
+  const carouselInner = document.querySelector('#plant-carousel .carousel-inner');
+  carouselInner.innerHTML = ''; // Limpiamos el carrusel
+  if (planta.imagenes && planta.imagenes.length > 0) {
+    planta.imagenes.forEach((imgUrl, index) => {
+      const item = document.createElement('div');
+      item.className = `carousel-item ${index === 0 ? 'active' : ''}`;
+      item.innerHTML = `<img src="${imgUrl}" class="d-block w-100" alt="Imagen de la planta ${index + 1}">`;
+      carouselInner.appendChild(item);
+    });
+  } else {
+    carouselInner.innerHTML = `
+      <div class="carousel-item active">
+        <div class="d-flex align-items-center justify-content-center" style="height: 250px; background-color: #f8f9fa;">
+          <p class="text-muted">Aún no hay fotos de esta planta</p>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function toggleEditMode(enable) {
+  isEditMode = enable;
+  const fields = [
+    { id: 'nombre', input: 'input-nombre' },
+    { id: 'tamano', input: 'input-tamano' },
+    { id: 'maceta', input: 'input-maceta', inputGroup: 'input-group-maceta' },
+    { id: 'ultimoRiego', input: 'input-ultimoRiego' },
+    { id: 'enFloracion', input: 'input-enFloracion' },
+  ];
+
+  fields.forEach(field => {
+    const span = document.getElementById(field.id);
+    const input = document.getElementById(field.input);
+    const inputGroup = field.inputGroup ? document.getElementById(field.inputGroup) : null;
+
+    if (span && input) {
+      if (enable) {
+        span.classList.add('d-none');
+        if (inputGroup) inputGroup.classList.remove('d-none'); else input.classList.remove('d-none');
+      } else {
+        span.classList.remove('d-none');
+        if (inputGroup) inputGroup.classList.add('d-none'); else input.classList.add('d-none');
+      }
     }
   });
 
-      const camposObligatorios = [
-      "nombre_personalizado",
-      "tipo_planta",
-      "tamano_planta",
-      "tamano_maceta_litros",
-      "fecha_ultimo_riego"
-    ];
+  document.getElementById('btn-editar-ficha').classList.toggle('d-none', enable);
+  document.getElementById('btn-guardar-ficha').classList.toggle('d-none', !enable);
+  document.getElementById('btn-cancelar-ficha').classList.toggle('d-none', !enable);
+}
 
-    const camposInvalidos = camposObligatorios.filter(campo => {
-      const valor = payload[campo];
-      return typeof valor !== "boolean" && (valor === undefined || valor === null || valor.toString().trim() === "");
-    });
+async function guardarFicha() {
+  const plantId = getPlantIdFromURL();
+  const btnGuardar = document.getElementById('btn-guardar-ficha');
 
-    if (camposInvalidos.length > 0) {
-      console.warn("❌ Campos inválidos:", camposInvalidos);
-      mostrarToast(`⚠️ Faltan datos obligatorios: ${camposInvalidos.join(", ")}`);
-      return;
-    }
-
+  // 1. Deshabilitamos el botón y mostramos el spinner
+  btnGuardar.disabled = true;
+  btnGuardar.innerHTML = `
+    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+    <span class="d-none d-md-inline"> Guardando...</span>
+  `;
+  // 1. Tomamos como base la data actual de la planta para asegurar que todos los campos estén.
+  // 2. Sobrescribimos con los nuevos valores de los inputs.
+  const payload = {
+    ...currentPlantData, // Base con todos los campos (incluyendo tipo_planta)
+    nombre_personalizado: document.getElementById('input-nombre').value,
+    tamano_planta: document.getElementById('input-tamano').value,
+    tamano_maceta_litros: parseFloat(document.getElementById('input-maceta').value),
+    fecha_ultimo_riego: document.getElementById('input-ultimoRiego').value,
+    en_floracion: document.getElementById('input-enFloracion').value === 'Si',
+  };
 
   try {
-    guardarCambios.disabled = true;
-    guardarCambios.textContent = 'Guardando...';
-
-    console.log("Payload enviado:", JSON.stringify(payload));
-
-    const resPut = await fetchProtegido(`/api/plantas/${idPlanta}/`, {
+    const putResponse = await fetchProtegido(`/api/plantas/${plantId}/`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
 
-    if (!resPut || !resPut.ok) {
-      const error = await resPut.json();
-      console.error("❌ Backend dice:", error);
-      mostrarToast('⚠️ Error al actualizar');
-      throw new Error("Error en PUT");
+    if (!putResponse.ok) {
+      const errorData = await putResponse.json();
+      throw new Error(errorData.detail || 'Error al guardar cambios.');
     }
 
-    mostrarToast('✅ Planta actualizada con éxito');
+    // ¡LA CLAVE ESTÁ AQUÍ! Leemos el JSON de la respuesta del PUT.
+    const plantaActualizada = await putResponse.json();
 
-    const resGet = await fetchProtegido(`/api/plantas/${idPlanta}/`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
-    });
+    mostrarToast('Ficha de planta actualizada con éxito.', 'success');
 
-    if (!resGet || !resGet.ok) {
-      mostrarToast('⚠️ Error al refrescar datos');
-      throw new Error("Error en GET");
-    }
-
-    const plantaActualizada = await resGet.json();
-    planta = plantaActualizada;
-
-    renderizarDetalle(plantaActualizada);
-
-    Object.keys(camposMap).forEach(campo => {
-      const span = document.getElementById(campo);
-      const input = document.getElementById(`input-${campo}`);
-      const btnEditar = document.getElementById(`editar-${campo}`);
-      if (span && input) {
-        span.classList.remove('d-none');
-        input.classList.add('d-none');
-        if (btnEditar) btnEditar.classList.remove('d-none');
-      }
-    });
-
-    document.getElementById("guardarCambios").classList.add("d-none");
-    guardarCambios.disabled = false;
-    guardarCambios.textContent = 'Guardar cambios';
-
-  } catch (err) {
-    console.error("❌ Error en actualización:", err);
-    mostrarToast('❌ Fallo de conexión');
-    guardarCambios.disabled = false;
-    guardarCambios.textContent = 'Guardar cambios';
+    renderizarDetalle(plantaActualizada); // Renderizamos con los datos que ya tenemos.
+    toggleEditMode(false);
+  } catch (error) {
+    console.error('Error al guardar cambios:', error);
+    mostrarToast(`Error: ${error.message}`, 'danger');
+  } finally {
+    // 3. Siempre, al final, restauramos el botón a su estado original
+    btnGuardar.disabled = false;
+    btnGuardar.innerHTML = `
+      <i class="bi bi-save"></i> <span class="d-none d-md-inline">Guardar</span>
+    `;
   }
-});
+}
+
+function cancelarEdicion() {
+  if (currentPlantData) {
+    document.getElementById('input-nombre').value = currentPlantData.nombre_personalizado;
+    document.getElementById('input-tamano').value = currentPlantData.tamano_planta;
+    document.getElementById('input-maceta').value = currentPlantData.tamano_maceta_litros;
+    document.getElementById('input-ultimoRiego').value = currentPlantData.fecha_ultimo_riego;
+    document.getElementById('input-enFloracion').value = currentPlantData.en_floracion ? 'Si' : 'No';
+  }
+  toggleEditMode(false);
+}
+
+async function regarPlantaDetail() {
+  const plantId = getPlantIdFromURL();
+  if (!currentPlantData) return;
+
+  const btnRegar = document.getElementById('btn-regar-detail');
+  btnRegar.disabled = true;
+  btnRegar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Regando...';
+
+  try {
+    const payload = { cantidad_agua_ml: currentPlantData.recommended_water_ml };
+    const res = await fetchProtegido(`/api/plantas/${plantId}/regar/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) throw new Error("Error en la respuesta del servidor al regar.");
+
+    mostrarToast("🌿 ¡Planta regada con éxito!", "success");
+
+    await cargarDatosPagina(plantId); // Llamamos a la función principal de carga.
+  } catch (error) {
+    console.error("❌ Error al regar planta:", error);
+    mostrarToast(`No se pudo regar la planta: ${error.message}`, "danger");
+  } finally {
+    btnRegar.disabled = false;
+    btnRegar.innerHTML = '<i class="bi bi-droplet me-2"></i>Regar Ahora';
+  }
+}
 
 // --- NUEVAS FUNCIONES PARA ESTADÍSTICAS E HISTORIAL ---
 
 function renderizarEstadisticas(stats) {
   const container = document.getElementById("stats-cards-container");
-  container.innerHTML = ""; // Limpiamos por si acaso
+  container.innerHTML = "";
 
   if (!stats) return;
 
-  // Formateador para el agua total
   const formatTotalWater = (ml) => {
     if (ml >= 1000) {
       return `${(ml / 1000).toFixed(2)} L`;
@@ -203,25 +238,19 @@ function renderizarEstadisticas(stats) {
 }
 
 function renderizarGrafico(historial) {
+  let riegoChartInstance = window.myRiegoChart;
   const ctx = document.getElementById("riegoChart").getContext("2d");
 
-  // Preparamos los datos para el gráfico
-  // FIX: Corrección del bug de fecha por zona horaria.
-  // La fecha del backend (ej: "2023-10-27T01:00:00Z") se interpreta en el timezone del navegador,
-  // lo que puede hacer que se muestre el día anterior.
-  // Para solucionarlo, creamos la fecha usando los componentes (año, mes, día) en UTC
-  // para que Chart.js la interprete correctamente sin corrimientos de zona horaria.
   const labels = historial.map(riego => {
     return new Date(riego.fecha).toLocaleDateString('es-AR', { timeZone: 'UTC' });
   }).reverse();
   const data = historial.map(riego => riego.cantidad_agua_ml).reverse();
 
-  // Destruir gráfico anterior si existe para evitar solapamiento
-  if (window.myRiegoChart) {
-    window.myRiegoChart.destroy();
+  if (riegoChartInstance) {
+    riegoChartInstance.destroy();
   }
 
-  window.myRiegoChart = new Chart(ctx, {
+  window.myRiegoChart = new Chart(ctx, { // Guardamos la instancia en window para poder destruirla
     type: "line",
     data: {
       labels: labels,
@@ -248,7 +277,7 @@ function renderizarGrafico(historial) {
 
 function renderizarTablaHistorial(historial) {
   const tbody = document.getElementById("history-table-body");
-  tbody.innerHTML = ""; // Limpiamos la tabla
+  tbody.innerHTML = "";
 
   if (historial.length === 0) {
     tbody.innerHTML = `<tr><td colspan="3" class="text-center text-white-50">No hay riegos registrados.</td></tr>`;
@@ -266,6 +295,7 @@ function renderizarTablaHistorial(historial) {
   });
 }
 
+// LÓGICA DE CARGA PRINCIPAL (MANTENEMOS LA ORIGINAL)
 async function cargarDatosPagina(plantId) {
   const historyLoading = document.getElementById("history-loading");
   historyLoading.classList.remove("d-none");
@@ -282,7 +312,6 @@ async function cargarDatosPagina(plantId) {
     }
 
     const plantaData = await plantaRes.json();
-    planta = plantaData; // Guardamos en la variable global para la edición
     const historialData = await historialRes.json();
 
     // Renderizamos todos los componentes con los datos recibidos
@@ -299,18 +328,77 @@ async function cargarDatosPagina(plantId) {
   }
 }
 
+// --- Lógica de Carga de Imágenes (Frontend UI) ---
+function setupImageUpload() {
+  const uploadArea = document.getElementById('upload-area');
+  const fileInput = document.getElementById('file-input');
+  const progressBar = document.querySelector('#upload-progress .progress-bar');
+  const uploadProgressContainer = document.getElementById('upload-progress');
+
+  if (!uploadArea || !fileInput) return;
+
+  const preventDefaults = e => { e.preventDefault(); e.stopPropagation(); };
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    uploadArea.addEventListener(eventName, preventDefaults, false);
+    document.body.addEventListener(eventName, preventDefaults, false);
+  });
+
+  const highlight = () => uploadArea.classList.add('highlight');
+  const unhighlight = () => uploadArea.classList.remove('highlight');
+  ['dragenter', 'dragover'].forEach(eventName => uploadArea.addEventListener(eventName, highlight, false));
+  ['dragleave', 'drop'].forEach(eventName => uploadArea.addEventListener(eventName, unhighlight, false));
+
+  uploadArea.addEventListener('drop', e => handleFiles(e.dataTransfer.files), false);
+  fileInput.addEventListener('change', e => handleFiles(e.target.files));
+
+  function handleFiles(files) {
+    if (files.length === 0) return;
+
+    uploadProgressContainer.classList.remove('d-none');
+    progressBar.style.width = '0%';
+    progressBar.setAttribute('aria-valuenow', 0);
+    progressBar.textContent = '0%';
+
+    // Lógica de subida real a GCS (simulada por ahora)
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += 10;
+      if (progress > 100) progress = 100;
+      progressBar.style.width = `${progress}%`;
+      progressBar.setAttribute('aria-valuenow', progress);
+      progressBar.textContent = `${progress}%`;
+
+      if (progress === 100) {
+        clearInterval(interval);
+        mostrarToast(`✅ ${files.length} imagen(es) subida(s) (simulado).`, 'success');
+        setTimeout(() => {
+          uploadProgressContainer.classList.add('d-none');
+          cargarDatosPagina(getPlantIdFromURL()); // Recargamos los datos para ver la nueva foto
+        }, 1000);
+      }
+    }, 100);
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-  const plantId = obtenerIdDesdeURL();
+  const plantId = getPlantIdFromURL();
   if (!plantId) {
     mostrarToast("No se especificó una planta.", "danger");
     setTimeout(() => (window.location.href = "/dashboard/"), 2000);
     return;
   }
 
+  // Llamada inicial para cargar todo
   cargarDatosPagina(plantId);
 
-  ["nombre", "tamano", "maceta", "ultimoRiego", "enFloracion"].forEach(campo => {
-    const btn = document.getElementById(`editar-${campo}`);
-    if (btn) btn.addEventListener("click", () => habilitarEdicion(campo, btn));
+  // Listeners para los botones
+  document.getElementById('btn-volver').addEventListener('click', () => {
+    window.location.href = '/dashboard/'; // Navegamos al dashboard para forzar la recarga
   });
+  document.getElementById('btn-editar-ficha').addEventListener('click', () => toggleEditMode(true));
+  document.getElementById('btn-guardar-ficha').addEventListener('click', guardarFicha);
+  document.getElementById('btn-cancelar-ficha').addEventListener('click', cancelarEdicion);
+  document.getElementById('btn-regar-detail').addEventListener('click', regarPlantaDetail);
+
+  setupImageUpload();
 });

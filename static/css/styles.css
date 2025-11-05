@@ -937,6 +937,55 @@ body.page-centered {
     box-shadow: 0 4px 12px rgba(0,0,0,0.15); /* Mantenemos la sombra original */
 }
 
+/* --- Estilos para las nuevas tarjetas de detalle --- */
+.card-ficha-planta,
+.card-galeria-fotos,
+.card-estado-riego,
+.card-suplementos {
+  background-color: #e9ecef; /* Fondo gris claro */
+  color: #212529; /* Texto oscuro */
+  border: none; /* Sin borde por defecto */
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-ficha-planta:hover,
+.card-galeria-fotos:hover,
+.card-estado-riego:hover,
+.card-suplementos:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.card-ficha-planta .card-title,
+.card-galeria-fotos .card-title,
+.card-estado-riego .card-title,
+.card-suplementos .card-title {
+  color: #6f42c1; /* Títulos violetas */
+  font-weight: 600;
+}
+
+/* Estilos para la zona de carga de imágenes */
+.upload-area {
+  border: 2px dashed #6f42c1; /* Borde punteado violeta */
+  background-color: rgba(111, 66, 193, 0.05); /* Fondo muy suave */
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.upload-area:hover,
+.upload-area.highlight {
+  background-color: rgba(111, 66, 193, 0.15); /* Fondo más visible en hover/drag */
+  border-color: #9ACD32; /* Borde verde lima */
+}
+
+/* Carrusel de imágenes */
+#plant-carousel .carousel-item img {
+  object-fit: cover; /* Asegura que la imagen cubra el espacio sin distorsionarse */
+  height: 250px; /* Altura fija para el carrusel */
+  border-radius: 0.375rem; /* Bordes redondeados como las tarjetas */
+}
+
 /* --- Estilo para resaltar el nombre de la marca con color --- */
 .brand-highlight {
   color: #6f42c1; /* Violeta */
