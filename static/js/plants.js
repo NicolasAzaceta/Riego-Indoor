@@ -255,17 +255,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   // --- Lógica para el botón flotante/navbar ---
   const tarjetaAgregar = document.getElementById('tarjeta-agregar-planta');
   const btnAgregarNavbar = document.getElementById('btnAgregarPlantaNavbar');
+  const btnAgregarNavbarMobile = document.getElementById('btnAgregarPlantaNavbarMobile');
 
-  if (tarjetaAgregar && btnAgregarNavbar) {
+  if (tarjetaAgregar && btnAgregarNavbar && btnAgregarNavbarMobile) {
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         // Si la tarjeta de "Agregar" NO está visible en la pantalla...
         if (!entry.isIntersecting) {
           // ...mostramos el botón del navbar.
           btnAgregarNavbar.classList.remove('d-none');
+          btnAgregarNavbarMobile.classList.remove('d-none');
         } else {
           // ...y si SÍ está visible, lo ocultamos.
           btnAgregarNavbar.classList.add('d-none');
+          btnAgregarNavbarMobile.classList.add('d-none');
         }
       });
     }, { threshold: 0.1 }); // Se activa cuando el 10% de la tarjeta es visible

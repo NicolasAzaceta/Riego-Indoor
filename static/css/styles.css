@@ -1006,3 +1006,10 @@ body.page-centered {
 .accordion-container a[aria-expanded="true"] .accordion-icon {
   transform: rotate(180deg);
 }
+
+/* --- Estilos para el dropdown de acciones en móvil --- */
+.mobile-actions-dropdown {
+  width: 280px; /* Ancho fijo para el menú desplegable */
+  background-color: #343a40; /* Mismo fondo que el sidebar */
+  border: 2px solid #6f42c1; /* Borde violeta */
+}
