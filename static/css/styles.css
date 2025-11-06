@@ -1013,3 +1013,29 @@ body.page-centered {
   background-color: #343a40; /* Mismo fondo que el sidebar */
   border: 2px solid #6f42c1; /* Borde violeta */
 }
+
+/* --- Estilos del Sidebar para Móvil (Overlay) --- */
+@media (max-width: 991.98px) {
+
+  #sidebar {
+    /* Lo posicionamos de forma fija sobre todo lo demás */
+    position: fixed;
+    /* Un z-index alto para que se superponga al navbar y al contenido */
+    z-index: 1055; 
+  }
+
+  #main-content {
+    /* En móvil, el contenido principal NUNCA se desplaza */
+    margin-left: 0 !important;
+  }
+
+  /* Por defecto, en móvil, el sidebar está colapsado (fuera de la pantalla) */
+  #sidebar.collapsed {
+    transform: translateX(-100%);
+  }
+  
+  /* Cuando NO está colapsado, se muestra deslizándose desde la izquierda */
+  #sidebar:not(.collapsed) {
+    transform: translateX(0);
+  }
+}

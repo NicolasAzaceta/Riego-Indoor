@@ -141,8 +141,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       tarjeta.style.animationDelay = `${index * 100}ms`;
 
       tarjeta.innerHTML = `
-      <div class="card-body text-center flex-grow-1 d-flex flex-column align-items-center justify-content-start">
-      <h5 class="card-title">${planta.nombre_personalizado}</h5>
+      <div class="card-body text-center flex-grow-1 d-flex flex-column align-items-center justify-content-center">
+      <h5 class="card-title mb-3">${planta.nombre_personalizado}</h5>
       <p class="card-text">🌱 <strong>${planta.estado_texto}</strong></p>
 
       <div class="animacion-local oculto mt-3">
