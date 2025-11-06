@@ -180,9 +180,27 @@
       </div>
     </div>
 
-    <!-- Tarjetas de Estadísticas (Nueva Sección) -->
-    <div class="row g-3 mb-5" id="stats-cards-container">
+    <!-- Tarjetas de Estadísticas (Nuevas Secciones Responsivas) -->
+    <!-- Vista para Escritorio (lg y superior) - Fila de tarjetas -->
+    <div class="row g-3 mb-5 d-none d-lg-flex" id="stats-cards-container-desktop">
       <!-- Las tarjetas se insertarán aquí con JavaScript -->
+    </div>
+
+    <!-- Vista para Móvil (md e inferior) - Carrusel -->
+    <div class="mb-5 d-lg-none" id="stats-carousel-container-mobile">
+      <div id="statsCarousel" class="carousel slide" data-bs-ride="carousel">
+        <div class="carousel-inner" id="stats-carousel-inner-mobile">
+          <!-- Los items del carrusel se insertarán aquí con JavaScript -->
+        </div>
+        <button class="carousel-control-prev d-lg-none" type="button" data-bs-target="#statsCarousel" data-bs-slide="prev">
+          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Anterior</span>
+        </button>
+        <button class="carousel-control-next d-lg-none" type="button" data-bs-target="#statsCarousel" data-bs-slide="next">
+          <span class="carousel-control-next-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Siguiente</span>
+        </button>
+      </div>
     </div>
 
     <!-- Gráfico y Tabla de Historial (Nueva Sección) -->

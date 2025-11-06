@@ -926,6 +926,12 @@ body.page-centered {
     box-shadow: 0 0.75rem 1.5rem rgba(111, 66, 193, 0.35); /* Sombra violeta más intensa */
 }
 
+/* Anulamos el efecto hover para las tarjetas dentro del carrusel móvil */
+.carousel .card-stat:hover {
+    transform: none;
+    box-shadow: none;
+}
+
 .chart-container {
     position: relative;
     height: 300px; /* Altura fija para el gráfico */
