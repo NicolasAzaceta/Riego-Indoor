@@ -183,9 +183,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const toggleIcon = sidebarToggle.querySelector("i");
     const sidebarTooltip = bootstrap.Tooltip.getInstance(sidebarToggle);
 
-    // Aseguramos que el sidebar siempre inicie desplegado.
-    sidebar.classList.remove("collapsed");
-    mainContent.classList.remove("expanded");
+    // Lógica de estado inicial del sidebar:
+    // - En pantallas grandes (desktop), empieza expandido.
+    // - En pantallas pequeñas (móvil), empieza colapsado.
+    if (window.innerWidth < 992) {
+      sidebar.classList.add("collapsed");
+    } else {
+      sidebar.classList.remove("collapsed");
+    }
 
     sidebarToggle.addEventListener("click", () => {
       sidebar.classList.toggle("collapsed");
