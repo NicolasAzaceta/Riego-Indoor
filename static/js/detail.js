@@ -200,10 +200,13 @@ async function regarPlantaDetail() {
 // --- NUEVAS FUNCIONES PARA ESTADÍSTICAS E HISTORIAL ---
 
 function renderizarEstadisticas(stats) {
-  const container = document.getElementById("stats-cards-container");
-  container.innerHTML = "";
+  const desktopContainer = document.getElementById("stats-cards-container-desktop");
+  const mobileContainer = document.getElementById("stats-carousel-inner-mobile");
 
-  if (!stats) return;
+  if (!desktopContainer || !mobileContainer) return;
+
+  desktopContainer.innerHTML = "";
+  mobileContainer.innerHTML = "";
 
   const formatTotalWater = (ml) => {
     if (ml >= 1000) {
@@ -220,20 +223,28 @@ function renderizarEstadisticas(stats) {
     { icon: "bi-clock-history", title: "Último Riego", value: stats.ultimo_riego_fecha ? new Date(stats.ultimo_riego_fecha).toLocaleDateString() : 'N/A' },
   ];
 
-  cards.forEach(card => {
-    const col = document.createElement("div");
-    // Usamos una clase que se adapte a 5 elementos. 'col' permite que Bootstrap los distribuya.
-    col.className = "col-lg col-md-4 col-6";
-    col.innerHTML = `
+  cards.forEach((card, index) => {
+    const cardHTML = `
       <div class="card card-stat h-100">
         <div class="card-body text-center">
           <i class="${card.icon} display-6 text-violeta"></i>
           <h6 class="card-subtitle mt-2 mb-1 text-muted">${card.title}</h6>
           <p class="card-text fs-5 fw-bold text-dark">${card.value}</p>
         </div>
-      </div>
-    `;
-    container.appendChild(col);
+      </div>`;
+
+    // 1. Renderizar para la vista de escritorio (columnas)
+    const col = document.createElement("div");
+    col.className = "col"; // 'col' hace que se distribuyan equitativamente en la fila
+    col.innerHTML = cardHTML;
+    desktopContainer.appendChild(col);
+
+    // 2. Renderizar para la vista móvil (carrusel)
+    const carouselItem = document.createElement("div");
+    carouselItem.className = `carousel-item ${index === 0 ? 'active' : ''}`;
+    // Añadimos un padding horizontal para que la tarjeta no toque los bordes del carrusel
+    carouselItem.innerHTML = `<div class="px-5">${cardHTML}</div>`;
+    mobileContainer.appendChild(carouselItem);
   });
 }
 
