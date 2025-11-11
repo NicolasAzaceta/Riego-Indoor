@@ -15,7 +15,7 @@
   <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 
 </head>
-<body class="page-centered">
+<body class="page-centered" style="visibility: hidden;">
 
   <!-- Navbar simple para la bienvenida -->
   <nav class="navbar">
@@ -31,7 +31,7 @@
   </nav>
 
   <!-- Contenedor principal para centrar el contenido -->
-  <div class="container d-flex flex-column justify-content-center align-items-center main-container">
+  <div id="main-content-home" class="container d-flex flex-column justify-content-center align-items-center main-container d-none">
 
     <!-- Tarjeta de Bienvenida -->
     <div class="card card-login text-center p-4" style="max-width: 500px;">
@@ -88,5 +88,37 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Registrar el Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('{% static 'js/service-worker.js' %}')
+          .then(registration => {
+            console.log('Service Worker registrado con éxito:', registration.scope);
+          })
+          .catch(error => {
+            console.error('Fallo el registro del Service Worker:', error);
+          });
+      });
+    }
+  </script>
+  {% load static %}
+  <script type="module">
+    // Importamos la función para obtener el token válido
+    import { obtenerTokenValido } from '{% static 'js/auth.js' %}';
+
+    window.addEventListener('load', async () => {
+      const mainContentHome = document.getElementById('main-content-home');
+      const token = await obtenerTokenValido();
+      if (token) {
+        // Si hay un token válido, redirigir al dashboard
+        window.location.href = "/dashboard/";
+      } else {
+        // Si no hay token, mostrar el contenido de la página de bienvenida
+        mainContentHome.classList.remove('d-none');
+        document.body.style.visibility = 'visible'; // Hacemos visible el body
+      }
+    });
+  </script>
 </body>
 </html>

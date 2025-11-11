@@ -15,6 +15,7 @@
   <script src="{% static 'js/google-places.js' %}" defer></script>
   <link rel="icon" type="image/png" href="{% static 'assets/img/icono.png' %}">
   <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+  <link rel="manifest" href="{% static 'manifest.json' %}">
   
 </head>
 <body>
@@ -38,6 +39,9 @@
     <div id="nav-actions-desktop" class="d-none d-lg-flex align-items-center">
       <a href="/add/" id="btnAgregarPlantaNavbar" class="btn btn-violeta-outline d-none me-3" title="Agregar planta">
         <i class="bi bi-plus-lg"></i>
+      </a>
+      <a href="#" id="btnInstalarPWA" class="btn btn-violeta-outline d-none me-3" title="Instalar aplicación">
+        <i class="bi bi-download me-1"></i>Instalar App
       </a>
       <div id="temp-externa-container" class="me-3"></div>
       <div id="google-calendar-container" class="me-3">
@@ -75,6 +79,10 @@
           <!-- Botón para agregar planta (se clona el comportamiento con JS) -->
           <a href="/add/" id="btnAgregarPlantaNavbarMobile" class="btn btn-violeta-outline d-none" title="Agregar planta">
             <i class="bi bi-plus-lg me-2"></i> Agregar Planta
+          </a>
+          <!-- Botón para instalar PWA en móvil -->
+          <a href="#" id="btnInstalarPWAMobile" class="btn btn-violeta-outline d-none" title="Instalar aplicación">
+            <i class="bi bi-download me-2"></i> Instalar App
           </a>
           <!-- Contenedor para el indicador de temperatura -->
           <div id="temp-externa-container-mobile"></div>

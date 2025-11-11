@@ -370,4 +370,41 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+
+  // --- Lógica para el botón de instalación de la PWA ---
+  let deferredPrompt; // Variable para guardar el evento de instalación
+  const btnInstalar = document.getElementById('btnInstalarPWA');
+  const btnInstalarMobile = document.getElementById('btnInstalarPWAMobile');
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    // Previene que Chrome 67 y anteriores muestren el prompt automáticamente
+    e.preventDefault();
+    // Guarda el evento para que pueda ser disparado más tarde.
+    deferredPrompt = e;
+    // Muestra nuestro botón de instalación personalizado
+    if (btnInstalar) btnInstalar.classList.remove('d-none');
+    if (btnInstalarMobile) btnInstalarMobile.classList.remove('d-none');
+  });
+
+  const handleInstallClick = (e) => {
+    e.preventDefault();
+    // Oculta nuestro botón, ya que solo se puede usar una vez.
+    if (btnInstalar) btnInstalar.classList.add('d-none');
+    if (btnInstalarMobile) btnInstalarMobile.classList.add('d-none');
+
+    // Muestra el prompt de instalación
+    deferredPrompt.prompt();
+    // Espera a que el usuario responda al prompt
+    deferredPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === 'accepted') {
+        console.log('El usuario aceptó instalar la PWA');
+      } else {
+        console.log('El usuario rechazó instalar la PWA');
+      }
+      deferredPrompt = null;
+    });
+  };
+
+  if (btnInstalar) btnInstalar.addEventListener('click', handleInstallClick);
+  if (btnInstalarMobile) btnInstalarMobile.addEventListener('click', handleInstallClick);
 });
