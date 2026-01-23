@@ -226,13 +226,22 @@ if DEBUG:
     # En desarrollo, los emails se imprimen en la consola.
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 else:
-    # En producción, usamos un servicio de SMTP como SendGrid.
-    # Estas variables se configuran en el dashboard de Render.
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = config('EMAIL_HOST')
-    EMAIL_PORT = config('EMAIL_PORT', cast=int)
-    EMAIL_USE_TLS = True
-    EMAIL_HOST_USER = config('EMAIL_HOST_USER')
-    EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
-    DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL') # El email que aparecerá como remitente
-    SERVER_EMAIL = DEFAULT_FROM_EMAIL # Para correos de error del servidor
+    # En producción, si hay configuración de email, usar SMTP
+    # Si no, usar console backend (los emails no se enviarán pero la app funcionará)
+    email_host = config('EMAIL_HOST', default=None)
+    
+    if email_host:
+        # Email configurado: usar SMTP
+        EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+        EMAIL_HOST = email_host
+        EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+        EMAIL_USE_TLS = True
+        EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+        EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+        DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@riegum.com')
+        SERVER_EMAIL = DEFAULT_FROM_EMAIL
+    else:
+        # Email NO configurado: usar console backend (temporal hasta configurar SMTP)
+        EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+        DEFAULT_FROM_EMAIL = 'noreply@riegum.com'
+        SERVER_EMAIL = DEFAULT_FROM_EMAIL
