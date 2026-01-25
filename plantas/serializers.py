@@ -1,7 +1,15 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from rest_framework.validators import UniqueValidator
-from .models import Planta, Riego
+from .models import Planta, Riego, ConfiguracionUsuario
+
+# -------- Configuración Indoor --------
+class ConfiguracionUsuarioSerializer(serializers.ModelSerializer):
+    """Serializer para la configuración de ambiente indoor del usuario"""
+    class Meta:
+        model = ConfiguracionUsuario
+        fields = ('id', 'temperatura_promedio', 'humedad_relativa')
+        read_only_fields = ('id',)
 
 # # -------- Usuarios --------Asi estaba creado por Nico. Lo modifico para ver si queda mejor con el profile oauth2
 # class RegisterSerializer(serializers.ModelSerializer):
@@ -36,7 +44,10 @@ class RegisterSerializer(serializers.ModelSerializer):
 class RiegoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Riego
-        fields = ("id", "planta", "fecha", "cantidad_agua_ml", "comentarios")
+        fields = (
+            "id", "planta", "fecha", "cantidad_agua_ml", "comentarios",
+            "ph_agua", "ec_agua", "suplementos_aplicados"
+        )
         read_only_fields = ("fecha",)
 
 

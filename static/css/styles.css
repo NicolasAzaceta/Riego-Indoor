@@ -385,7 +385,8 @@ input.form-control:-webkit-autofill {
 
 .card.estado-verde::before,
 .card.estado-amarillo::before,
-.card.estado-naranja::before {
+.card.estado-naranja::before,
+.card.estado-urgente::before {
   content: "";
   position: absolute;
   top: 8px;
@@ -409,6 +410,24 @@ input.form-control:-webkit-autofill {
 .card.estado-naranja::before {
    border-color: #dc3545; /* rojo Bootstrap */
   /* border-color: #fd7e14; naranja suave */
+}
+
+.card.estado-urgente::before {
+  border-color: #dc3545; /* rojo intenso */
+  border-width: 4px; /* Borde más grueso para mayor urgencia */
+  animation: pulse-border 1.5s ease-in-out infinite; /* Animación de pulso */
+}
+
+/* Animación de pulso para el borde urgente */
+@keyframes pulse-border {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(0.98);
+  }
 }
 
 /* border-color: #dc3545; rojo Bootstrap */

@@ -4,8 +4,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.models import User
 
-from .models import Planta, Riego
-from .serializers import PlantaSerializer, RiegoSerializer, RegisterSerializer
+from .models import Planta, Riego, ConfiguracionUsuario
+from .serializers import PlantaSerializer, RiegoSerializer, RegisterSerializer, ConfiguracionUsuarioSerializer
 from .permissions import IsOwner
 from notificaciones.services.google_calendar import get_user_calendar_service
 
@@ -57,6 +57,27 @@ class RegisterView(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         return Response({"id": user.id, "username": user.username}, status=status.HTTP_201_CREATED)
+
+class ConfiguracionUsuarioView(APIView):
+    """
+    GET: Obtener configuración indoor del usuario
+    PATCH: Actualizar temperatura y/o humedad indoor
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        # Obtener o crear configuración del usuario
+        config, created = ConfiguracionUsuario.objects.get_or_create(user=request.user)
+        serializer = ConfiguracionUsuarioSerializer(config)
+        return Response(serializer.data)
+    
+    def patch(self, request):
+        # Actualizar configuración indoor
+        config, created = ConfiguracionUsuario.objects.get_or_create(user=request.user)
+        serializer = ConfiguracionUsuarioSerializer(config, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
 class GoogleCalendarStatusView(APIView):
     permission_classes = [IsAuthenticated]
@@ -166,21 +187,52 @@ class PlantaViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'])
     def estado(self, request, pk=None):
         planta = self.get_object()
-        datos = planta.calculos_riego()
+        
+        # Intentar obtener configuración indoor del usuario
+        temperatura = None
+        humedad = None
+        if hasattr(request.user, 'configuracion_cultivo'):
+            config = request.user.configuracion_cultivo
+            temperatura = config.temperatura_promedio
+            humedad = config.humedad_relativa
+        
+        datos = planta.calculos_riego(temperatura_externa=temperatura, humedad_externa=humedad)
+        
+        # Agregar información sobre si se usó configuración indoor
+        datos['usando_config_indoor'] = temperatura is not None or humedad is not None
+        
         return Response(datos)
 
     @action(detail=True, methods=['get'])
     def recalcular(self, request, pk=None):
         """
-        Recalcula el estado de riego de una planta usando una temperatura externa.
-        Espera un parámetro: /api/plantas/{id}/recalcular/?temperatura=25
+        Recalcula el estado de riego de una planta usando temperatura y humedad externas.
+        Parámetros opcionales: /api/plantas/{id}/recalcular/?temperatura=25&humedad=60
+        Si no se pasan parámetros, usa la configuración indoor del usuario.
         """
         planta = self.get_object()
+       
+        # Intentar obtener parámetros de la query string
         temperatura_str = request.query_params.get('temperatura')
-        if temperatura_str is None:
-            return Response({"error": "El parámetro 'temperatura' es requerido."}, status=status.HTTP_400_BAD_REQUEST)
+        humedad_str = request.query_params.get('humedad')
         
-        datos_recalculados = planta.calculos_riego(temperatura_externa=float(temperatura_str))
+        # Si no se pasaron parámetros, usar config indoor del usuario
+        temperatura = None
+        humedad = None
+        
+        if temperatura_str is not None:
+            temperatura = float(temperatura_str)
+        elif hasattr(request.user, 'configuracion_cultivo') and request.user.configuracion_cultivo.temperatura_promedio is not None:
+            temperatura = request.user.configuracion_cultivo.temperatura_promedio
+            
+        if humedad_str is not None:
+            humedad = float(humedad_str)
+        elif hasattr(request.user, 'configuracion_cultivo') and request.user.configuracion_cultivo.humedad_relativa is not None:
+            humedad = request.user.configuracion_cultivo.humedad_relativa
+        
+        datos_recalculados = planta.calculos_riego(temperatura_externa=temperatura, humedad_externa=humedad)
+        datos_recalculados['usando_config_indoor'] = temperatura is not None or humedad is not None
+        
         return Response(datos_recalculados)
 
     @action(detail=True, methods=['post'])
@@ -207,6 +259,8 @@ class PlantaViewSet(viewsets.ModelViewSet):
         Responde con un JSON que contiene:
         - `estadisticas`: Datos agregados como promedios, totales, etc.
         - `historial_riegos`: Una lista de todos los registros de riego.
+        - `tendencias`: Análisis de tendencias en el patrón de riego.
+        - `anomalias`: Detección de patrones inusuales.
         """
         planta = self.get_object()
         historial_riegos_qs = planta.riegos.all().order_by('-fecha')
@@ -233,7 +287,66 @@ class PlantaViewSet(viewsets.ModelViewSet):
             if diferencias:
                 frecuencia_promedio_dias = sum(diferencias) / len(diferencias)
 
-        # --- 2. Construcción del objeto de respuesta ---
+        # --- 2. Análisis de Tendencias ---
+        tendencias = {}
+        if historial_riegos_qs.count() >= 5:
+            # Comparar últimos 5 riegos vs promedio general
+            ultimos_5 = list(historial_riegos_qs.values_list('fecha', flat=True)[:5])
+            diferencias_ultimos = [(ultimos_5[i-1] - ultimos_5[i]).days for i in range(1, len(ultimos_5))]
+            
+            if diferencias_ultimos and frecuencia_promedio_dias:
+                frecuencia_reciente = sum(diferencias_ultimos) / len(diferencias_ultimos)
+                variacion = frecuencia_reciente - frecuencia_promedio_dias
+                
+                if variacion > 1:
+                    tendencias['mensaje'] = f"La frecuencia de riego está disminuyendo (cada {round(frecuencia_reciente, 1)} días vs promedio de {round(frecuencia_promedio_dias, 1)} días)"
+                    tendencias['tipo'] = 'disminuyendo'
+                elif variacion < -1:
+                    tendencias['mensaje'] = f"La frecuencia de riego está aumentando (cada {round(frecuencia_reciente, 1)} días vs promedio de {round(frecuencia_promedio_dias, 1)} días)"
+                    tendencias['tipo'] = 'aumentando'
+                else:
+                    tendencias['mensaje'] = "La frecuencia de riego se mantiene estable"
+                    tendencias['tipo'] = 'estable'
+                    
+                tendencias['frecuencia_reciente'] = round(frecuencia_reciente, 1)
+                tendencias['variacion_dias'] = round(variacion, 1)
+
+        # --- 3. Detección de Anomalías ---
+        anomalias = []
+        
+        # Detectar riegos muy frecuentes (3 o más riegos en 3 días)
+        if historial_riegos_qs.count() >= 3:
+            ultimos_3 = list(historial_riegos_qs.values_list('fecha', flat=True)[:3])
+            dias_entre_ultimos_3 = (ultimos_3[0] - ultimos_3[2]).days
+            
+            if dias_entre_ultimos_3 <= 3:
+                anomalias.append({
+                    'tipo': 'riegos_frecuentes',
+                    'mensaje': f"⚠️ Se detectaron {len(ultimos_3)} riegos en {dias_entre_ultimos_3} días. Verificá si la planta necesita tanta agua.",
+                    'severidad': 'media'
+                })
+        
+        # Detectar cantidades anormales de agua
+        if estadisticas_db['promedio_agua_ml'] and estadisticas_db['promedio_agua_ml'] > 0:
+            riegos_recientes = historial_riegos_qs[:5]
+            for riego in riegos_recientes:
+                if riego.cantidad_agua_ml:
+                    if riego.cantidad_agua_ml > estadisticas_db['promedio_agua_ml'] * 2:
+                        anomalias.append({
+                            'tipo': 'agua_excesiva',
+                            'mensaje': f"⚠️ Riego del {riego.fecha}: {riego.cantidad_agua_ml}ml es más del doble del promedio ({round(estadisticas_db['promedio_agua_ml'])}ml)",
+                            'severidad': 'alta',
+                            'fecha': riego.fecha
+                        })
+                    elif riego.cantidad_agua_ml < estadisticas_db['promedio_agua_ml'] * 0.3:
+                        anomalias.append({
+                            'tipo': 'agua_insuficiente',
+                            'mensaje': f"ℹ️ Riego del {riego.fecha}: {riego.cantidad_agua_ml}ml es menos del 30% del promedio ({round(estadisticas_db['promedio_agua_ml'])}ml)",
+                            'severidad': 'baja',
+                            'fecha': riego.fecha
+                        })
+
+        # --- 4. Construcción del objeto de respuesta ---
         estadisticas = {
             'total_riegos': estadisticas_db['total_riegos'] or 0,
             'total_agua_ml': estadisticas_db['total_agua_ml'] or 0,
@@ -247,7 +360,12 @@ class PlantaViewSet(viewsets.ModelViewSet):
 
         # Serializamos el historial para la segunda parte de la respuesta
         serializer = RiegoSerializer(historial_riegos_qs, many=True)
-        return Response({'estadisticas': estadisticas, 'historial_riegos': serializer.data})
+        return Response({
+            'estadisticas': estadisticas, 
+            'historial_riegos': serializer.data,
+            'tendencias': tendencias,
+            'anomalias': anomalias
+        })
 
 # -------- Riegos --------
 class RiegoViewSet(viewsets.ReadOnlyModelViewSet):

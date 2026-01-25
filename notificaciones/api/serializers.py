@@ -3,8 +3,6 @@ from datetime import datetime, timedelta
 from notificaciones.services.google_calendar import parse_datetime
 
 
-
-
 class EventCreateSerializer(serializers.Serializer):
      calendar_id = serializers.EmailField(help_text='Ej: tu_mail@gmail.com')
      summary = serializers.CharField(max_length=200)
