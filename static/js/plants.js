@@ -85,8 +85,8 @@ document.getElementById("btnConfirmarEliminar").addEventListener("click", async 
     await eliminarPlanta(plantaAEliminar.id, plantaAEliminar.card);
     plantaAEliminar = null;
   }
-    const modal = bootstrap.Modal.getInstance(document.getElementById("modalConfirmar"));
-    if (modal) modal.hide();
+  const modal = bootstrap.Modal.getInstance(document.getElementById("modalConfirmar"));
+  if (modal) modal.hide();
 });
 
 async function obtenerPlanta(id) {
@@ -118,22 +118,25 @@ document.addEventListener("DOMContentLoaded", async () => {
     const container = document.getElementById("plant-list");
 
     crearTarjetaAgregarPlanta(); // Siempre creamos la tarjeta de "Agregar" primero
-    
+
     plantas.forEach((planta, index) => {
       const card = document.createElement("div");
       card.className = "col-md-4 mb-3";
-      
+
       let claseEstado = '';
       switch (planta.estado_riego) {
-      case 'no_necesita':
-      claseEstado = 'estado-verde';
-      break;
-      case 'pronto':
-      claseEstado = 'estado-amarillo';
-      break;
-      case 'hoy':
-      claseEstado = 'estado-naranja';
-      break;
+        case 'no_necesita':
+          claseEstado = 'estado-verde';
+          break;
+        case 'pronto':
+          claseEstado = 'estado-amarillo';
+          break;
+        case 'hoy':
+          claseEstado = 'estado-naranja';
+          break;
+        case 'urgente':
+          claseEstado = 'estado-urgente';
+          break;
       }
 
       const tarjeta = document.createElement("div");
@@ -197,7 +200,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           const textoRiego = tarjeta.querySelector(".card-text");
           textoRiego.innerHTML = `🌱 <strong>${data.estado_texto}</strong>`;
 
-          tarjeta.classList.remove("estado-verde", "estado-amarillo", "estado-naranja");
+          tarjeta.classList.remove("estado-verde", "estado-amarillo", "estado-naranja", "estado-urgente");
 
           switch (data.estado_riego) {
             case 'no_necesita':
@@ -205,6 +208,12 @@ document.addEventListener("DOMContentLoaded", async () => {
               break;
             case 'pronto':
               tarjeta.classList.add("estado-amarillo");
+              break;
+            case 'hoy':
+              tarjeta.classList.add("estado-naranja");
+              break;
+            case 'urgente':
+              tarjeta.classList.add("estado-urgente");
               break;
           }
 
@@ -227,12 +236,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const btnEliminar = tarjeta.querySelector(".btn-eliminar");
       btnEliminar.addEventListener("click", () => {
-      plantaAEliminar = {
-      id: planta.id,
-       card: card
-      };
-      const modal = new bootstrap.Modal(document.getElementById("modalConfirmar"));
-      modal.show();
+        plantaAEliminar = {
+          id: planta.id,
+          card: card
+        };
+        const modal = new bootstrap.Modal(document.getElementById("modalConfirmar"));
+        modal.show();
       });
 
 
@@ -282,3 +291,144 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 const params = new URLSearchParams(window.location.search);
 const plantId = params.get("id");
+
+// ==================== CONFIGURACIÓN INDOOR ====================
+
+/**
+ * Cargar configuración indoor del perfil del usuario
+ */
+async function cargarConfigIndoor() {
+  try {
+    const res = await fetchProtegido('/api/configuracion-usuario/', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const inputTemp = document.getElementById('inputTemperatura');
+      const inputHum = document.getElementById('inputHumedad');
+
+      if (data.temperatura_promedio !== null) {
+        inputTemp.value = data.temperatura_promedio;
+      }
+      if (data.humedad_relativa !== null) {
+        inputHum.value = data.humedad_relativa;
+      }
+
+      // Mostrar badge en el navbar (desktop y mobile) si hay configuración activa
+      const badge = document.getElementById('indoorConfigBadge');
+      const badgeText = document.getElementById('indoorConfigText');
+      const badgeMobile = document.getElementById('indoorConfigBadgeMobile');
+      const badgeTextMobile = document.getElementById('indoorConfigTextMobile');
+
+      if (data.temperatura_promedio !== null || data.humedad_relativa !== null) {
+        let texto = '';
+        if (data.temperatura_promedio !== null) {
+          texto += `${data.temperatura_promedio}°C`;
+        }
+        if (data.humedad_relativa !== null) {
+          if (texto) texto += ' | ';
+          texto += `${data.humedad_relativa}%`;
+        }
+
+        // Desktop badge
+        if (badge && badgeText) {
+          badgeText.textContent = texto;
+          badge.classList.remove('d-none');
+          badge.classList.add('d-flex');
+        }
+
+        // Mobile badge
+        if (badgeMobile && badgeTextMobile) {
+          badgeTextMobile.textContent = texto;
+          badgeMobile.classList.remove('d-none');
+          badgeMobile.classList.add('d-flex');
+        }
+      } else {
+        // Ocultar ambos si no hay config
+        if (badge) {
+          badge.classList.add('d-none');
+          badge.classList.remove('d-flex');
+        }
+        if (badgeMobile) {
+          badgeMobile.classList.add('d-none');
+          badgeMobile.classList.remove('d-flex');
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error al cargar configuración indoor:", error);
+  }
+}
+
+/**
+ * Guardar configuración indoor
+ */
+async function guardarConfigIndoor() {
+  const inputTemp = document.getElementById('inputTemperatura');
+  const inputHum = document.getElementById('inputHumedad');
+  const btnGuardar = document.getElementById('btnGuardarIndoor');
+
+  const temperatura = inputTemp.value !== '' ? parseFloat(inputTemp.value) : null;
+  const humedad = inputHum.value !== '' ? parseFloat(inputHum.value) : null;
+
+  // Validaciones
+  if (temperatura !== null && (temperatura < -10 || temperatura > 50)) {
+    mostrarToast('❌ La temperatura debe estar entre -10°C y 50°C');
+    return;
+  }
+
+  if (humedad !== null && (humedad < 0 || humedad > 100)) {
+    mostrarToast('❌ La humedad debe estar entre 0% y 100%');
+    return;
+  }
+
+  // Deshabilitar botón mientras guardamos
+  btnGuardar.disabled = true;
+  btnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...';
+
+  try {
+    const payload = {
+      temperatura_promedio: temperatura,
+      humedad_relativa: humedad
+    };
+
+    const res = await fetchProtegido('/api/configuracion-usuario/', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      mostrarToast('✅ Configuración indoor guardada con éxito');
+
+      // Recargar plantas para aplicar la nueva configuración
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } else {
+      const errorData = await res.json();
+      const errorMsg = errorData.temperatura_promedio || errorData.humedad_relativa || 'Error al guardar configuración';
+      mostrarToast(`❌ ${errorMsg}`);
+    }
+  } catch (error) {
+    console.error("Error al guardar configuración indoor:", error);
+    mostrarToast('❌ Error de conexión al guardar configuración');
+  } finally {
+    btnGuardar.disabled = false;
+    btnGuardar.innerHTML = 'Guardar Configuración';
+  }
+}
+
+// Inicializar cuando cargue la página
+document.addEventListener('DOMContentLoaded', () => {
+  // Cargar configuración indoor guardada
+  cargarConfigIndoor();
+
+  // Botón para guardar configuración indoor
+  const btnGuardarIndoor = document.getElementById('btnGuardarIndoor');
+  if (btnGuardarIndoor) {
+    btnGuardarIndoor.addEventListener('click', guardarConfigIndoor);
+  }
+});
