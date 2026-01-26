@@ -40,7 +40,7 @@
       </div>
 
       <!-- ACCIONES PARA ESCRITORIO (Visible en lg y superior) -->
-      <div id="nav-actions-desktop" class="d-none d-lg-flex align-items-center">
+      <div id="nav-actions-desktop" class="d-none d-lg-flex align-items-center gap-3">
         <a href="/add/" id="btnAgregarPlantaNavbar" class="btn btn-violeta-outline d-none me-3" title="Agregar planta">
           <i class="bi bi-plus-lg"></i>
         </a>
@@ -48,14 +48,6 @@
           <i class="bi bi-download me-1"></i>Instalar App
         </a>
 
-        <!-- Badge de configuración indoor (alineado horizontalmente) -->
-        <span id="indoorConfigBadge" class="badge bg-violeta d-none align-items-center gap-1 me-3"
-          style="font-size: 0.9rem; padding: 0.5rem 0.75rem;">
-          <i class="bi bi-house-fill"></i>
-          <span id="indoorConfigText"></span>
-        </span>
-
-        <div id="temp-externa-container" class="me-3"></div>
         <div id="google-calendar-container" class="me-3">
           <a href="#" id="btnGoogleCalendar" class="btn btn-violeta-outline">
             <i class="bi bi-calendar-plus me-1"></i>Vincular Calendario
@@ -74,14 +66,57 @@
             </ul>
           </div>
         </div>
+        <!-- Dropdown de Clima -->
+        <div class="dropdown">
+          <button class="btn btn-violeta-outline dropdown-toggle d-flex align-items-center" type="button" id="menuClima"
+            data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-cloud-sun me-2"></i>
+            <span class="d-none d-md-inline">Clima</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="menuClima" style="min-width: 280px;">
+            <!-- Indoor Section -->
+            <li class="dropdown-header">
+              <i class="bi bi-house-fill me-1"></i> INDOOR
+            </li>
+            <li>
+              <div class="px-3 py-2" id="indoor-clima-info">
+                <div class="d-flex align-items-center gap-2 text-muted small">
+                  <i class="bi bi-arrow-repeat"></i>
+                  <span>Cargando...</span>
+                </div>
+              </div>
+            </li>
+            <li>
+              <hr class="dropdown-divider">
+            </li>
+
+            <!-- Outdoor Section -->
+            <li class="dropdown-header">
+              <i class="bi bi-cloud-sun-fill me-1"></i> OUTDOOR
+            </li>
+            <li>
+              <div class="px-3 py-2" id="outdoor-clima-info">
+                <div class="d-flex align-items-center gap-2 text-muted small">
+                  <i class="bi bi-arrow-repeat"></i>
+                  <span>Cargando...</span>
+                </div>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Dropdown de Usuario -->
         <div class="dropdown">
           <button class="btn btn-violeta-outline dropdown-toggle d-flex align-items-center" type="button"
             id="menuUsuario" data-bs-toggle="dropdown" aria-expanded="false">
             <i class="bi bi-person-circle me-2"></i>
           </button>
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="menuUsuario">
-            <li class="li-animado"><a class="dropdown-item" id="btnLogout" href="javascript:void(0);"><i
-                  class="bi bi-box-arrow-right me-2"></i>Cerrar sesión</a></li>
+            <li class="li-animado">
+              <a class="dropdown-item" id="btnLogout" href="javascript:void(0);">
+                <i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión
+              </a>
+            </li>
           </ul>
         </div>
       </div>

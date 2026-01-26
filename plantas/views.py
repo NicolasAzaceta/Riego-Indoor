@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.models import User
 
-from .models import Planta, Riego, ConfiguracionUsuario, LocalidadUsuario
+from .models import Planta, Riego, ConfiguracionUsuario, LocalidadUsuario, RegistroClima
 from .serializers import PlantaSerializer, RiegoSerializer, RegisterSerializer, ConfiguracionUsuarioSerializer, LocalidadUsuarioSerializer
 from .permissions import IsOwner
 from notificaciones.services.google_calendar import get_user_calendar_service
@@ -93,16 +93,66 @@ class LocalidadUsuarioView(APIView):
             serializer = LocalidadUsuarioSerializer(localidad)
             return Response(serializer.data)
         except LocalidadUsuario.DoesNotExist:
-            return Response({"detail": "No tiene localidad configurada"}, status=status.HTTP_404_NOT_FOUND)
+            # Retornar objeto vacío en lugar de 404 - permite que el frontend funcione sin errores
+            return Response({}, status=status.HTTP_200_OK)
     
     def post(self, request):
-        # Crear o actualizar localidad
-        localidad, created = LocalidadUsuario.objects.get_or_create(user=request.user)
-        serializer = LocalidadUsuarioSerializer(localidad, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+        """
+        Guardar/actualizar localidad outdoor.
+        Espera: { "nombre_localidad": "Córdoba, Argentina" }
+        Hace geocoding en backend para mayor seguridad.
+        """
+        nombre_localidad = request.data.get('nombre_localidad', '').strip()
         
-        return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+        if not nombre_localidad:
+            return Response(
+                {"error": "El nombre de la localidad es requerido"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Geocoding usando Google Maps API (en backend)
+        try:
+            geocode_url = f"https://maps.googleapis.com/maps/api/geocode/json"
+            params = {
+                'address': nombre_localidad,
+                'key': settings.GOOGLE_MAPS_API_KEY
+            }
+            geocode_res = requests.get(geocode_url, params=params)
+            geocode_data = geocode_res.json()
+            
+            if not geocode_data.get('results'):
+                return Response(
+                    {"error": "No se encontró la localidad. Intentá con otro nombre."}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Extraer coordenadas y nombre completo
+            result = geocode_data['results'][0]
+            location = result['geometry']['location']
+            formatted_address = result['formatted_address']
+            
+            # Crear o actualizar localidad
+            localidad, created = LocalidadUsuario.objects.update_or_create(
+                user=request.user,
+                defaults={
+                    'nombre_localidad': formatted_address,
+                    'latitud': location['lat'],
+                    'longitud': location['lng'],
+                    'activo': True
+                }
+            )
+            
+            serializer = LocalidadUsuarioSerializer(localidad)
+            return Response(
+                serializer.data, 
+                status=status.HTTP_201_CREATED if created else status.HTTP_200_OK
+            )
+            
+        except Exception as e:
+            return Response(
+                {"error": f"Error al procesar la localidad: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     
     def delete(self, request):
         try:
@@ -111,6 +161,42 @@ class LocalidadUsuarioView(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
         except LocalidadUsuario.DoesNotExist:
             return Response({"detail": "No tiene localidad configurada"}, status=status.HTTP_404_NOT_FOUND)
+
+
+class LocalidadClimaView(APIView):
+    """
+    GET: Obtener último registro de clima para la localidad del usuario
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        try:
+            localidad = request.user.localidad_outdoor
+            # Obtener último registro de clima
+            ultimo_registro = RegistroClima.objects.filter(
+                localidad=localidad
+            ).order_by('-fecha').first()
+            
+            if not ultimo_registro:
+                return Response(
+                    {"error": "No hay datos de clima disponibles"}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            return Response({
+                'temperatura_max': ultimo_registro.temperatura_max,
+                'temperatura_min': ultimo_registro.temperatura_min,
+                'humedad_promedio': ultimo_registro.humedad_promedio,
+                'precipitacion_mm': ultimo_registro.precipitacion_mm,
+                'velocidad_viento_kmh': ultimo_registro.velocidad_viento_kmh,
+                'fecha': ultimo_registro.fecha
+            })
+            
+        except LocalidadUsuario.DoesNotExist:
+            return Response(
+                {"error": "No tiene localidad configurada"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 
 class TriggerRecalculoOutdoorView(APIView):

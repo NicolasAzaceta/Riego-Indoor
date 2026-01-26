@@ -143,7 +143,18 @@ document.addEventListener("DOMContentLoaded", async () => {
       tarjeta.className = `card h-100 shadow-sm position-relative animar-entrada ${claseEstado}`;
       tarjeta.style.animationDelay = `${index * 100}ms`;
 
+      // Badge de tipo de cultivo (fallback a 'indoor' para plantas existentes)
+      const tipoCultivo = planta.tipo_cultivo || 'indoor';
+      const badgeCultivo = tipoCultivo === 'outdoor'
+        ? '<span class="badge bg-primary me-2" title="Riego automático según clima" style="font-size: 0.75rem;">🌤️ Outdoor</span>'
+        : '<span class="badge bg-secondary me-2" title="Ambiente controlado" style="font-size: 0.75rem;">🏠 Indoor</span>';
+
       tarjeta.innerHTML = `
+      <!-- Badge de tipo de cultivo en esquina superior izquierda -->
+      <div class="position-absolute" style="top: 14px; left: 16px; z-index: 10;">
+        ${badgeCultivo}
+      </div>
+      
       <div class="card-body text-center flex-grow-1 d-flex flex-column align-items-center justify-content-center">
       <h5 class="card-title mb-3">${planta.nombre_personalizado}</h5>
       <p class="card-text">🌱 <strong>${planta.estado_texto}</strong></p>

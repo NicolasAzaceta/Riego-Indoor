@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -13,27 +14,33 @@
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
   <link rel="manifest" href="{% static 'manifest.json' %}">
 </head>
+
 <body>
   <nav class="navbar mb-4">
-  <div class="container-fluid d-flex justify-content-between align-items-center">
-    <!-- Contenedor del logo con posicionamiento relativo -->
-    <div style="position: relative; height: 30px;">
-      <!-- El logo se posiciona absolutamente, permitiendo que se desborde sin afectar la altura del nav -->
-      <img src="{% static 'assets/img/RIEGUMICONO.png' %}" alt="Logo Riegum" style="position: absolute; top: 50%; transform: translateY(-50%); width: 150px; height: auto;">
-    </div>
+    <div class="container-fluid d-flex justify-content-between align-items-center">
+      <!-- Contenedor del logo con posicionamiento relativo -->
+      <div style="position: relative; height: 30px;">
+        <!-- El logo se posiciona absolutamente, permitiendo que se desborde sin afectar la altura del nav -->
+        <img src="{% static 'assets/img/RIEGUMICONO.png' %}" alt="Logo Riegum"
+          style="position: absolute; top: 50%; transform: translateY(-50%); width: 150px; height: auto;">
+      </div>
 
-    <div class="dropdown">
-      <button class="btn btn-violeta-outline dropdown-toggle d-flex align-items-center" type="button" id="menuUsuario" data-bs-toggle="dropdown" aria-expanded="false">
-        <i class="bi bi-person-circle me-2"></i>
-      </button>
-      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="menuUsuario"><li class="li-animado"><a class="dropdown-item" id="btnLogout" href="javascript:void(0);"><i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión</a></li></ul>
+      <div class="dropdown">
+        <button class="btn btn-violeta-outline dropdown-toggle d-flex align-items-center" type="button" id="menuUsuario"
+          data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="bi bi-person-circle me-2"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="menuUsuario">
+          <li class="li-animado"><a class="dropdown-item" id="btnLogout" href="javascript:void(0);"><i
+                class="bi bi-box-arrow-right me-2"></i>Cerrar sesión</a></li>
+        </ul>
+      </div>
     </div>
-  </div>
-</nav>
-  
+  </nav>
+
   <div class="container py-4">
     <div class="position-relative mb-4">
-      <button id="btn-volver" class="btn btn-white-outline position-absolute start-0" >← Volver</button>
+      <button id="btn-volver" class="btn btn-white-outline position-absolute start-0">← Volver</button>
       <h2 class="text-center m-0 fw-bold">Agregar Planta</h2>
     </div>
 
@@ -60,9 +67,21 @@
         </select>
       </div>
 
+      <!-- Campo nuevo: Tipo de Cultivo -->
       <div class="mb-3">
-      <label for="maceta" class="form-label">Tamaño de la maceta en litros<span style="color: red"> *</span></label>
-      <input type="number" class="form-control" id="maceta" name="maceta" placeholder="Ej: 5" required/>
+        <label for="tipo_cultivo" class="form-label">Tipo de cultivo<span style="color: red"> *</span></label>
+        <select class="form-select" id="tipo_cultivo" required>
+          <option value="indoor" selected>🏠 Indoor (Ambiente controlado)</option>
+          <option value="outdoor">🌤️ Outdoor (Clima automático)</option>
+        </select>
+        <small class="form-text text-white">
+          Outdoor: El riego se ajusta automáticamente según el clima de tu localidad
+        </small>
+      </div>
+
+      <div class="mb-3">
+        <label for="maceta" class="form-label">Tamaño de la maceta en litros<span style="color: red"> *</span></label>
+        <input type="number" class="form-control" id="maceta" name="maceta" placeholder="Ej: 5" required />
       </div>
 
       <input class="form-check-input" type="checkbox" id="enFloracion" name="enFloracion">
@@ -75,15 +94,16 @@
       </div>
 
       <div id="toast-container" class="position-fixed start-50 translate-middle-x p-3" style="top: 7rem; z-index: 9999">
-        <div id="toast" class="toast fade align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div id="toast" class="toast fade align-items-center text-white bg-success border-0" role="alert"
+          aria-live="assertive" aria-atomic="true">
           <div class="d-flex">
-            <div class="toast-body" id="toast-body"></div>          
+            <div class="toast-body" id="toast-body"></div>
           </div>
         </div>
       </div>
 
       <div class="text-center">
-        <button type="submit" class="btn btn-violeta-hover-verde">Guardar planta</button>   
+        <button type="submit" class="btn btn-violeta-hover-verde">Guardar planta</button>
       </div>
     </form>
   </div>
@@ -93,4 +113,5 @@
   <script type="module" src="{% static 'js/api.js' %}"></script>
   <script type="module" src="{% static 'js/add.js' %}" defer></script>
 </body>
+
 </html>

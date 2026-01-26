@@ -153,8 +153,8 @@ def recalcular_fecha_riego_outdoor(planta, registro_clima):
         datos_riego = planta.calculos_riego()
         
         return {
-            'dias_restantes': datos_riego['dias_restantes'],
-            'fecha_proximo_riego': datos_riego['fecha_proximo_riego'],
+            'dias_restantes': datos_riego['days_left'],
+            'fecha_proximo_riego': datos_riego['next_watering_date'],
             'ajuste_aplicado': 0,
             'motivo': resultado_ajuste['motivo'],
             'reseteo_por_lluvia': True
@@ -162,7 +162,7 @@ def recalcular_fecha_riego_outdoor(planta, registro_clima):
     
     # Obtener cálculo base actual
     datos_base = planta.calculos_riego()
-    dias_base = datos_base['frecuencia_riego_dias']
+    dias_base = datos_base['frequency_days']
     
     # Aplicar ajuste
     ajuste = resultado_ajuste['ajuste_dias']

@@ -38,27 +38,31 @@ def obtener_clima_actual(latitud, longitud):
         data = response.json()
         
         # Parsear respuesta de Google Weather API
-        # Estructura: https://developers.google.com/maps/documentation/weather/reference/rest
+        # Estructura real documentada en el JSON de respuesta
         
-        # Temperatura (viene en Celsius por defecto)
-        temp_celsius = data.get('temperature', {}).get('value', 20.0)
+        # Temperatura actual
+        temp_actual = data.get('temperature', {}).get('degrees', 20.0)
         
-        # Humedad (porcentaje)
-        humedad = data.get('relativeHumidity', {}).get('value', 50.0)
+        # Temperatura máxima y mínima del historial
+        history = data.get('currentConditionsHistory', {})
+        temp_max = history.get('maxTemperature', {}).get('degrees', temp_actual)
+        temp_min = history.get('minTemperature', {}).get('degrees', temp_actual - 5)
         
-        # Precipitación (mm)
-        precipitacion = data.get('precipitation', {}).get('value', 0.0)
+        # Humedad relativa (viene directo como número)
+        humedad = data.get('relativeHumidity', 50.0)
         
-        # Viento (m/s -> km/h)
-        viento_ms = data.get('wind', {}).get('speed', {}).get('value', 0.0)
-        viento_kmh = viento_ms * 3.6
+        # Precipitación acumulada (en el historial)
+        precipitacion_mm = history.get('qpf', {}).get('quantity', 0.0)
+        
+        # Velocidad del viento (ya viene en km/h)
+        viento_kmh = data.get('wind', {}).get('speed', {}).get('value', 0.0)
         
         return {
-            'temperatura_max': temp_celsius,  # Asumimos temp actual como max
-            'temperatura_min': temp_celsius - 5,  # Estimación conservadora
-            'humedad_promedio': humedad,
-            'precipitacion_mm': precipitacion,
-            'velocidad_viento_kmh': viento_kmh
+            'temperatura_max': float(temp_max),
+            'temperatura_min': float(temp_min),
+            'humedad_promedio': float(humedad),
+            'precipitacion_mm': float(precipitacion_mm),
+            'velocidad_viento_kmh': float(viento_kmh)
         }
     
     except requests.exceptions.RequestException as e:
@@ -96,8 +100,9 @@ def guardar_registro_clima(localidad, datos_clima, fecha=None):
         }
     )
     
-    # Actualizar timestamp de última actualización
-    localidad.ultima_actualizacion_clima = datetime.now()
+    # Actualizar timestamp de última actualización (timezone-aware)
+    from django.utils import timezone
+    localidad.ultima_actualizacion_clima = timezone.now()
     localidad.save(update_fields=['ultima_actualizacion_clima'])
     
     return registro
