@@ -119,23 +119,31 @@ def procesar_dias_faltantes():
     """
     from plantas.models import LocalidadUsuario, RegistroClima
     from datetime import timedelta
+    from django.db import ProgrammingError
     
-    logger.info("Verificando días faltantes...")
-    
-    localidades = LocalidadUsuario.objects.filter(activo=True)
-    
-    for localidad in localidades:
-        # Verificar si hay registros recientes
-        ultimo_registro = RegistroClima.objects.filter(
-            localidad=localidad
-        ).order_by('-fecha').first()
+    try:
+        logger.info("Verificando días faltantes...")
         
-        if ultimo_registro:
-            dias_desde_ultimo = (date.today() - ultimo_registro.fecha).days
+        localidades = LocalidadUsuario.objects.filter(activo=True)
+        
+        for localidad in localidades:
+            # Verificar si hay registros recientes
+            ultimo_registro = RegistroClima.objects.filter(
+                localidad=localidad
+            ).order_by('-fecha').first()
             
-            if dias_desde_ultimo > 1:
-                logger.warning(f"Faltan {dias_desde_ultimo - 1} días de clima para {localidad.nombre_localidad}")
-                # Por ahora solo loggeamos, en el futuro podríamos usar historical weather API
+            if ultimo_registro:
+                dias_desde_ultimo = (date.today() - ultimo_registro.fecha).days
+                
+                if dias_desde_ultimo > 1:
+                    logger.warning(f"Faltan {dias_desde_ultimo - 1} días de clima para {localidad.nombre_localidad}")
+                    # Por ahora solo loggeamos, en el futuro podríamos usar historical weather API
+    
+    except ProgrammingError as e:
+        # Las tablas aún no existen (migraciones no aplicadas) - esto es normal durante deploy
+        logger.debug(f"No se puede procesar días faltantes todavía (tablas no existen): {e}")
+    except Exception as e:
+        logger.error(f"Error al procesar días faltantes: {e}")
 
 
 # Instancia global del scheduler
