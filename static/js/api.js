@@ -101,47 +101,47 @@ function actualizarDisplayTemperaturaExterna(data) {
   const containerMobile = document.getElementById('temp-externa-container-mobile');
 
   [containerDesktop, containerMobile].forEach(container => {
-  // Limpiamos el contenedor
-  container.innerHTML = '';
+    // Limpiamos el contenedor
+    container.innerHTML = '';
 
-  if (!data) {
-    return;
-  }
+    if (!data) {
+      return;
+    }
 
-  let displayHTML = '';
-  let keyToRemove = '';
-  let toastMessage = '';
+    let displayHTML = '';
+    let keyToRemove = '';
+    let toastMessage = '';
 
-  if (data.type === 'manual') {
-    displayHTML = `
+    if (data.type === 'manual') {
+      displayHTML = `
       <button type="button" class="btn btn-violeta-solid" disabled style="opacity: 1;">
           <i class="bi bi-thermometer-half me-1"></i>
           ${data.value}°C (Manual)
       </button>
     `;
-    keyToRemove = getTemperaturaKey();
-    toastMessage = "Temperatura manual desactivada. Recargando...";
-  } else if (data.type === 'clima') {
-    displayHTML = `
+      keyToRemove = getTemperaturaKey();
+      toastMessage = "Temperatura manual desactivada. Recargando...";
+    } else if (data.type === 'clima') {
+      displayHTML = `
       <button type="button" class="btn btn-violeta-solid" disabled style="opacity: 1;">
           <i class="bi bi-cloud-sun me-1"></i>
           ${data.value.toFixed(1)}°C (${data.location})
       </button>
     `;
-    keyToRemove = getClimaKey();
-    toastMessage = "Clima guardado desactivado. Recargando...";
-  }
+      keyToRemove = getClimaKey();
+      toastMessage = "Clima guardado desactivado. Recargando...";
+    }
 
-  const tempDisplay = document.createElement('div');
-  tempDisplay.className = 'btn-group';
-  tempDisplay.innerHTML = displayHTML + `
+    const tempDisplay = document.createElement('div');
+    tempDisplay.className = 'btn-group';
+    tempDisplay.innerHTML = displayHTML + `
       <button type="button" class="btn btn-violeta-outline btn-quitar-temp" title="Dejar de usar temperatura manual">
           <i class="bi bi-x-lg"></i>
       </button>
   `;
-  container.appendChild(tempDisplay);
+    container.appendChild(tempDisplay);
 
-  // Agregamos el listener a todos los botones de quitar temperatura
+    // Agregamos el listener a todos los botones de quitar temperatura
     container.querySelectorAll('.btn-quitar-temp').forEach(btn => btn.addEventListener('click', () => {
       if (keyToRemove) localStorage.removeItem(keyToRemove);
       actualizarDisplayTemperaturaExterna(null);
@@ -149,6 +149,24 @@ function actualizarDisplayTemperaturaExterna(data) {
       setTimeout(() => window.location.reload(), 1500);
     }));
   });
+}
+
+// Cargar localidad outdoor guardada
+async function cargarLocalidadOutdoor() {
+  try {
+    const res = await fetchProtegido("/api/localidad-outdoor/");
+    if (res.ok) {
+      const data = await res.json();
+      const inputLocalidad = document.getElementById("inputLocalidad");
+      if (inputLocalidad && data.nombre_localidad) {
+        inputLocalidad.value = data.nombre_localidad;
+        inputLocalidad.placeholder = `Guardado: ${data.nombre_localidad}`;
+      }
+    }
+  } catch (error) {
+    // Es normal que no haya localidad guardada
+    console.log("No hay localidad outdoor configurada (es normal si no se usó antes)");
+  }
 }
 
 async function recalcularTodasLasPlantas(temperatura, sufijo = '') {
@@ -228,7 +246,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Re-asignar listeners a los elementos clonados
-  document.body.addEventListener('click', function(e) {
+  document.body.addEventListener('click', function (e) {
     if (e.target && (e.target.id === 'btnGoogleCalendarMobile' || e.target.closest('#btnGoogleCalendarMobile'))) {
       e.preventDefault();
       iniciarVinculacionGoogle();
@@ -323,54 +341,85 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // ========== OUTDOOR: Guardar localidad y recalcular con clima real ==========
   const btnRecalcularClima = document.getElementById("btnRecalcularClima");
-  if (btnRecalcularClima) {
-    btnRecalcularClima.addEventListener("click", async () => {
-      const inputLocalidad = document.getElementById("inputLocalidad");
-      const localidad = inputLocalidad.value.trim();
+  const inputLocalidad = document.getElementById("inputLocalidad");
 
+  if (btnRecalcularClima && inputLocalidad) {
+    // Cargar localidad guardada al iniciar
+    cargarLocalidadOutdoor();
+
+    btnRecalcularClima.addEventListener("click", async () => {
+      const localidad = inputLocalidad.value.trim();
       if (!localidad) {
-        mostrarToast("Por favor, ingresá una localidad.", "warning");
+        mostrarToast("❌ Por favor, ingresá una localidad", "error");
         return;
       }
 
-      mostrarToast("Buscando datos del clima...", "info");
+      btnRecalcularClima.disabled = true;
+      btnRecalcularClima.textContent = "Recalculando...";
 
       try {
-        // Ahora usamos GET y pasamos la localidad como un query parameter
-        const url = `/api/weather/?location=${encodeURIComponent(localidad)}`;
-        const res = await fetchProtegido(url);
+        // 1. Guardar localidad usando Google Places Geocoding
+        const geocodeRes = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(localidad)}&key=${window.GOOGLE_MAPS_API_KEY}`);
+        const geocode = await geocodeRes.json();
 
-        const data = await res.json();
-
-        // Verificamos si la respuesta es un error o si tiene la estructura esperada
-        if (!res.ok || !data.temperature?.degrees) {
-          throw new Error(data.error || 'Respuesta inesperada del servidor.');
+        if (!geocode.results || geocode.results.length === 0) {
+          mostrarToast("❌ No se encontró la localidad", "error");
+          return;
         }
 
-        const temp = data.temperature.degrees;
-        const climaData = {
-          type: 'clima',
-          value: temp,
-          location: localidad.split(',')[0] // Guardamos solo el nombre de la ciudad
-        };
+        const location = geocode.results[0].geometry.location;
+        const nombreCompleto = geocode.results[0].formatted_address;
 
-        // Guardamos en localStorage, limpiamos el otro valor y actualizamos el display
-        const climaKey = getClimaKey();
-        const tempKey = getTemperaturaKey();
-        if (climaKey) localStorage.setItem(climaKey, JSON.stringify(climaData));
-        if (tempKey) localStorage.removeItem(tempKey);
+        // 2. Guardar localidad en backend
+        const saveRes = await fetchProtegido("/api/localidad-outdoor/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            nombre_localidad: nombreCompleto,
+            latitud: location.lat,
+            longitud: location.lng,
+            activo: true
+          })
+        });
 
-        actualizarDisplayTemperaturaExterna(climaData);
-        mostrarToast(`Clima en ${localidad}: ${temp.toFixed(1)}°C. Recalculando riegos...`, "info");
+        if (!saveRes.ok) {
+          throw new Error("No se pudo guardar la localidad");
+        }
 
-        recalcularTodasLasPlantas(temp, ' (con clima)');
+        // 3. Trigger recálculo con clima actual
+        const recalcRes = await fetchProtegido("/api/recalcular-outdoor/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" }
+        });
+
+        if (!recalcRes.ok) {
+          const error = await recalcRes.json();
+          throw new Error(error.error || "Error al recalcular");
+        }
+
+        const resultado = await recalcRes.json();
+
+        // 4. Mostrar resultado
+        mostrarToast(`✅ ${resultado.mensaje}
+🌤️ Temp: ${resultado.clima.temperatura_max.toFixed(1)}°C
+💧 Precipitación: ${resultado.clima.precipitacion.toFixed(1)}mm`, "success");
+
+        // 5. Refrescar lista de plantas
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+
       } catch (error) {
-        mostrarToast(`❌ Error al buscar el clima: ${error.message}`, "danger");
+        console.error("Error en recálculo outdoor:", error);
+        mostrarToast(`❌ ${error.message}`, "error");
+      } finally {
+        btnRecalcularClima.disabled = false;
+        btnRecalcularClima.textContent = "Usar Clima Actual";
       }
     });
   }
-
   // --- Lógica para el botón de instalación de la PWA ---
   let deferredPrompt; // Variable para guardar el evento de instalación
   const btnInstalar = document.getElementById('btnInstalarPWA');
