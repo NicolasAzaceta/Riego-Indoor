@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from rest_framework.validators import UniqueValidator
-from .models import Planta, Riego, ConfiguracionUsuario
+from .models import Planta, Riego, ConfiguracionUsuario, LocalidadUsuario
 
 # -------- Configuración Indoor --------
 class ConfiguracionUsuarioSerializer(serializers.ModelSerializer):
@@ -10,6 +10,15 @@ class ConfiguracionUsuarioSerializer(serializers.ModelSerializer):
         model = ConfiguracionUsuario
         fields = ('id', 'temperatura_promedio', 'humedad_relativa')
         read_only_fields = ('id',)
+
+
+# -------- Localidad Outdoor --------
+class LocalidadUsuarioSerializer(serializers.ModelSerializer):
+    """Serializer para la localidad outdoor con recálculo automático"""
+    class Meta:
+        model = LocalidadUsuario
+        fields = ('id', 'nombre_localidad', 'latitud', 'longitud', 'activo', 'ultima_actualizacion_clima')
+        read_only_fields = ('id', 'ultima_actualizacion_clima')
 
 # # -------- Usuarios --------Asi estaba creado por Nico. Lo modifico para ver si queda mejor con el profile oauth2
 # class RegisterSerializer(serializers.ModelSerializer):

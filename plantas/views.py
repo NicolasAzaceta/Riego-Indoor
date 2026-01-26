@@ -4,8 +4,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.models import User
 
-from .models import Planta, Riego, ConfiguracionUsuario
-from .serializers import PlantaSerializer, RiegoSerializer, RegisterSerializer, ConfiguracionUsuarioSerializer
+from .models import Planta, Riego, ConfiguracionUsuario, LocalidadUsuario
+from .serializers import PlantaSerializer, RiegoSerializer, RegisterSerializer, ConfiguracionUsuarioSerializer, LocalidadUsuarioSerializer
 from .permissions import IsOwner
 from notificaciones.services.google_calendar import get_user_calendar_service
 
@@ -78,6 +78,83 @@ class ConfiguracionUsuarioView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
+class LocalidadUsuarioView(APIView):
+    """
+    GET: Obtener localidad outdoor del usuario
+    POST: Crear/actualizar localidad outdoor
+    DELETE: Eliminar localidad outdoor
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        try:
+            localidad = request.user.localidad_outdoor
+            serializer = LocalidadUsuarioSerializer(localidad)
+            return Response(serializer.data)
+        except LocalidadUsuario.DoesNotExist:
+            return Response({"detail": "No tiene localidad configurada"}, status=status.HTTP_404_NOT_FOUND)
+    
+    def post(self, request):
+        # Crear o actualizar localidad
+        localidad, created = LocalidadUsuario.objects.get_or_create(user=request.user)
+        serializer = LocalidadUsuarioSerializer(localidad, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        
+        return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+    
+    def delete(self, request):
+        try:
+            localidad = request.user.localidad_outdoor
+            localidad.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except LocalidadUsuario.DoesNotExist:
+            return Response({"detail": "No tiene localidad configurada"}, status=status.HTTP_404_NOT_FOUND)
+
+
+class TriggerRecalculoOutdoorView(APIView):
+    """
+    POST: Trigger manual para recalcular riegos outdoor ahora (útil para testing)
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        from plantas.services.weather_service import obtener_clima_para_usuario
+        from plantas.services.outdoor_calculator import recalcular_fecha_riego_outdoor
+        from plantas.models import Planta
+        
+        # Obtener y guardar clima actual
+        registro = obtener_clima_para_usuario(request.user)
+        
+        if registro is None:
+            return Response(
+                {"error": "No se pudo obtener el clima. Verificá que tengas una localidad outdoor configurada."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Recalcular plantas outdoor
+        plantas = Planta.objects.filter(usuario=request.user, tipo_cultivo='outdoor')
+        resultados = []
+        
+        for planta in plantas:
+            resultado = recalcular_fecha_riego_outdoor(planta, registro)
+            resultados.append({
+                'planta': planta.nombre_personalizado,
+                'fecha_proximo_riego': resultado['fecha_proximo_riego'],
+                'ajuste_aplicado': resultado['ajuste_aplicado'],
+                'motivo': resultado['motivo']
+            })
+        
+        return Response({
+            'mensaje': f'Recálculo completado para {len(resultados)} plantas',
+            'clima': {
+                'temperatura_max': registro.temperatura_max,
+                'humedad': registro.humedad_promedio,
+                'precipitacion': registro.precipitacion_mm
+            },
+            'resultados': resultados
+        })
 
 class GoogleCalendarStatusView(APIView):
     permission_classes = [IsAuthenticated]

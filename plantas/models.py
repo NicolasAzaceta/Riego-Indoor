@@ -32,6 +32,53 @@ class ConfiguracionUsuario(models.Model):
         return f"Config de {self.user.username}"
 
 
+class LocalidadUsuario(models.Model):
+    """
+    Localidad seleccionada para plantas outdoor con recálculo automático.
+    """
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='localidad_outdoor')
+    nombre_localidad = models.CharField(max_length=255, help_text="Ej: Córdoba, Argentina")
+    latitud = models.FloatField(help_text="Latitud de la localidad")
+    longitud = models.FloatField(help_text="Longitud de la localidad")
+    activo = models.BooleanField(default=True, help_text="Si está activo, recalcula riegos automáticamente")
+    ultima_actualizacion_clima = models.DateTimeField(null=True, blank=True, help_text="Última vez que se obtuvo el clima")
+    
+    class Meta:
+        verbose_name = "Localidad de Usuario"
+        verbose_name_plural = "Localidades de Usuarios"
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.nombre_localidad}"
+
+
+class RegistroClima(models.Model):
+    """
+    Registro histórico de clima para análisis y recálculo de riegos.
+    """
+    localidad = models.ForeignKey(LocalidadUsuario, on_delete=models.CASCADE, related_name='registros_clima')
+    fecha = models.DateField(auto_now_add=True)
+    
+    # Datos meteorológicos
+    temperatura_max = models.FloatField(help_text="Temperatura máxima del día (°C)")
+    temperatura_min = models.FloatField(help_text="Temperatura mínima del día (°C)")
+    humedad_promedio = models.FloatField(help_text="Humedad relativa promedio (%)")
+    precipitacion_mm = models.FloatField(default=0, help_text="Precipitación en milímetros")
+    velocidad_viento_kmh = models.FloatField(default=0, help_text="Velocidad del viento (km/h)")
+    
+    # Control de procesamiento
+    riegos_recalculados = models.BooleanField(default=False, help_text="Si ya se procesó este registro")
+    
+    class Meta:
+        unique_together = ['localidad', 'fecha']
+        ordering = ['-fecha']
+        verbose_name = "Registro de Clima"
+        verbose_name_plural = "Registros de Clima"
+    
+    def __str__(self):
+        return f"{self.localidad.nombre_localidad} - {self.fecha}"
+
+
+
 class Planta(models.Model):
     TIPO_PLANTA_CHOICES = [
         ('Auto', 'Autofloreciente',),
@@ -42,23 +89,32 @@ class Planta(models.Model):
         ('Mediana', 'Mediana'),
         ('Grande', 'Grande'),
     ]
+    TIPO_CULTIVO_CHOICES = [
+        ('indoor', 'Indoor'),
+        ('outdoor', 'Outdoor'),
+    ]
 
     usuario = models.ForeignKey(User, on_delete=models.CASCADE)
     nombre_personalizado = models.CharField(max_length=100)
     tipo_planta = models.CharField(max_length=10, choices=TIPO_PLANTA_CHOICES)
     tamano_planta = models.CharField(max_length=10, choices=TAMANO_CHOICES)
-    tamano_maceta_litros = models.FloatField(
-        default=0.0, 
-        validators=[MinValueValidator(1.0)],
-        help_text="Tamaño en litros (mínimo 1L)"
+    tipo_cultivo = models.CharField(
+        max_length=10, 
+        choices=TIPO_CULTIVO_CHOICES, 
+        default='indoor',
+        help_text="Tipo de cultivo: indoor (temp/humedad fijas) u outdoor (clima automático)"
     )
+    tamano_maceta_litros = models.FloatField(validators=[MinValueValidator(1.0)], help_text="Tamaño en litros (mínimo 1L)")
     fecha_ultimo_riego = models.DateField()
     en_floracion = models.BooleanField(default=False)
     google_calendar_event_id = models.CharField(max_length=255, blank=True, null=True, help_text="ID del evento de Google Calendar para el próximo riego")
 
     # ---------- LÓGICA DE CÁLCULO ----------
     def calculos_riego(self, temperatura_externa=None, humedad_externa=None):
-       
+        """
+        Calcula días restantes, cantidad de agua, y estado de riego.
+        Ajusta según temperatura y humedad externas (si se proporcionan).
+        """
         litros = max(self.tamano_maceta_litros, 1.0)  # Mínimo 1L
         size = self.tamano_planta
         en_flor = self.en_floracion

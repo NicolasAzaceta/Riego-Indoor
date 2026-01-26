@@ -154,3 +154,77 @@ def create_calendar_event(
 
  event = service.events().insert(calendarId=calendar_id, body=body).execute()
  return event
+
+
+def delete_calendar_event(user, event_id):
+    """
+    Borra un evento del calendario del usuario.
+    
+    Args:
+        user: Usuario de Django con profile y credenciales de Google
+        event_id: ID del evento a borrar
+    
+    Returns:
+        bool: True si se borró correctamente, False si hubo error
+    """
+    try:
+        service = get_user_calendar_service(user)
+        service.events().delete(calendarId='primary', eventId=event_id).execute()
+        return True
+    except Exception as e:
+        print(f"Error al borrar evento {event_id}: {e}")
+        return False
+
+
+def create_riego_event(user, planta, fecha_riego, motivo=None):
+    """
+    Crea un evento de riego en el calendario del usuario.
+    
+    Args:
+        user: Usuario de Django con profile y credenciales
+        planta: Instancia de Planta
+        fecha_riego: date object con la fecha del próximo riego
+        motivo: Texto explicativo del recálculo (opcional)
+    
+    Returns:
+        dict: Evento creado con 'id' o None si hay error
+    """
+    try:
+        from datetime import datetime, timedelta
+        
+        service = get_user_calendar_service(user)
+        
+        # Crear evento a las 9 AM del día indicado
+        start_dt = ensure_timezone(datetime.combine(fecha_riego, datetime.min.time().replace(hour=9)))
+        end_dt = start_dt + timedelta(hours=1)
+        
+        # Descripción
+        descripcion = f"💧 Riego programado para {planta.nombre_personalizado}"
+        if motivo:
+            descripcion += f"\n\n{motivo}"
+        
+        body = {
+            'summary': f"Regar {planta.nombre_personalizado}",
+            'description': descripcion,
+            'start': {
+                'dateTime': start_dt.isoformat(),
+                'timeZone': DEFAULT_TZ,
+            },
+            'end': {
+                'dateTime': end_dt.isoformat(),
+                'timeZone': DEFAULT_TZ,
+            },
+            'reminders': {
+                'useDefault': False,
+                'overrides': [
+                    {'method': 'popup', 'minutes': 60},  # 1 hora antes
+                ],
+            },
+        }
+        
+        event = service.events().insert(calendarId='primary', body=body).execute()
+        return event
+    
+    except Exception as e:
+        print(f"Error al crear evento de riego para {planta.nombre_personalizado}: {e}")
+        return None
