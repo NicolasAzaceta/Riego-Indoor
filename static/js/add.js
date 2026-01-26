@@ -24,31 +24,35 @@ document.addEventListener("DOMContentLoaded", () => {
     const nombre = document.querySelector("#nombre").value.trim();
     const tipo = document.querySelector("#tipo").value.trim();
     const tamaño = document.querySelector("#tamano").value;
+    const tipoCultivo = document.querySelector("#tipo_cultivo").value;
     const maceta = document.querySelector("#maceta").value.trim();
     const enFloracion = document.querySelector("#enFloracion").checked;
     const ultimoRiego = document.querySelector("#ultimo_riego").value;
 
     // Validación básica
-    if (!nombre || !tipo || !tamaño || !ultimoRiego || !maceta) {
-    mostrarToast("⚠️ Por favor, completá todos los campos.", "warning");
-    return;
+    if (!nombre || !tipo || !tamaño || !tipoCultivo || !ultimoRiego || !maceta) {
+      mostrarToast("⚠️ Por favor, completá todos los campos.", "warning");
+      return;
     }
+
 
     const nuevaPlanta = {
       nombre_personalizado: nombre,
       tipo_planta: tipo,
       tamano_planta: tamaño,
+      tipo_cultivo: tipoCultivo,
       tamano_maceta_litros: maceta,
       fecha_ultimo_riego: ultimoRiego,
       en_floracion: enFloracion,
     };
+
     try {
       const res = await fetchProtegido("/api/plantas/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-      body: JSON.stringify(nuevaPlanta)
+        body: JSON.stringify(nuevaPlanta)
       });
       if (!res.ok) throw new Error("Error al guardar la planta");
 

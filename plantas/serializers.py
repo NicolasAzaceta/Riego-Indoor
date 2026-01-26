@@ -75,7 +75,7 @@ class PlantaSerializer(serializers.ModelSerializer):
         model = Planta
         fields = (
             "id", "usuario", "nombre_personalizado", "tipo_planta",
-            "tamano_planta", "tamano_maceta_litros", "fecha_ultimo_riego",
+            "tamano_planta", "tipo_cultivo", "tamano_maceta_litros", "fecha_ultimo_riego",
             "en_floracion",
             # calculados
             "recommended_water_ml", "frequency_days", "next_watering_date",

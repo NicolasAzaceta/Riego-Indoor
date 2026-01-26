@@ -152,6 +152,98 @@ function actualizarDisplayTemperaturaExterna(data) {
 }
 
 // Cargar localidad outdoor guardada
+async function cargarDatosClimaDropdown() {
+  const indoorContainer = document.getElementById('indoor-clima-info');
+  const outdoorContainer = document.getElementById('outdoor-clima-info');
+
+  if (!indoorContainer || !outdoorContainer) return;
+
+  try {
+    // Cargar configuración indoor
+    const configRes = await fetchProtegido('/api/configuracion-usuario/');
+    if (configRes.ok) {
+      const config = await configRes.json();
+      console.log('Config indoor recibida:', config); // Debug
+
+      const tempIndoor = config.temperatura_promedio;
+      const humIndoor = config.humedad_relativa;
+
+      // Verificar que los valores existan y no sean null
+      if (tempIndoor !== null && tempIndoor !== undefined &&
+        humIndoor !== null && humIndoor !== undefined) {
+        indoorContainer.innerHTML = `
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span><i class="bi bi-thermometer-half text-danger"></i> Temperatura:</span>
+            <strong>${tempIndoor}°C</strong>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-droplet-fill text-primary"></i> Humedad:</span>
+            <strong>${humIndoor}%</strong>
+          </div>
+          <small class="text-muted d-block mt-1">(Valores manuales)</small>
+        `;
+      } else {
+        indoorContainer.innerHTML = '<small class="text-muted">No configurado. <a href="#" onclick="document.getElementById(\'sidebar-toggle\').click(); return false;">Configurar</a></small>';
+      }
+    } else {
+      indoorContainer.innerHTML = '<small class="text-muted">Error al cargar</small>';
+    }
+
+    // Cargar datos outdoor
+    const localidadRes = await fetchProtegido('/api/localidad-outdoor/');
+    if (localidadRes.ok) {
+      const localidad = await localidadRes.json();
+
+      if (localidad.nombre_localidad) {
+        // Hay localidad configurada, intentar obtener último registro de clima
+        const climaRes = await fetchProtegido(`/api/localidad-outdoor/clima/`);
+        if (climaRes.ok) {
+          const clima = await climaRes.json();
+          outdoorContainer.innerHTML = `
+            <div class="mb-2">
+              <i class="bi bi-geo-alt-fill text-success"></i>
+              <strong>${localidad.nombre_localidad}</strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span><i class="bi bi-thermometer-half text-danger"></i> Temp. Max.:</span>
+              <strong>${clima.temperatura_max?.toFixed(1) || '-'}°C</strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span><i class="bi bi-droplet-fill text-primary"></i> Humedad:</span>
+              <strong>${clima.humedad_promedio?.toFixed(0) || '-'}%</strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span><i class="bi bi-cloud-rain-fill text-info"></i> Lluvia:</span>
+              <strong>${clima.precipitacion_mm?.toFixed(1) || '0'}mm</strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+              <span><i class="bi bi-wind"></i> Viento:</span>
+              <strong>${clima.velocidad_viento_kmh?.toFixed(0) || '-'} km/h</strong>
+            </div>
+            <small class="text-muted d-block mt-1">Actualizado hoy</small>
+          `;
+        } else {
+          outdoorContainer.innerHTML = `
+            <div class="mb-2">
+              <i class="bi bi-geo-alt-fill text-success"></i>
+              <strong>${localidad.nombre_localidad}</strong>
+            </div>
+            <small class="text-muted">Clima no disponible</small>
+          `;
+        }
+      } else {
+        outdoorContainer.innerHTML = '<small class="text-muted">No configurado</small>';
+      }
+    } else {
+      outdoorContainer.innerHTML = '<small class="text-muted">No configurado</small>';
+    }
+  } catch (error) {
+    console.error('Error cargando datos de clima:', error);
+    indoorContainer.innerHTML = '<small class="text-danger">Error al cargar</small>';
+    outdoorContainer.innerHTML = '<small class="text-danger">Error al cargar</small>';
+  }
+}
+
 async function cargarLocalidadOutdoor() {
   try {
     const res = await fetchProtegido("/api/localidad-outdoor/");
@@ -196,6 +288,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Inicializar todos los tooltips de la página.
   [...document.querySelectorAll('[data-bs-toggle="tooltip"]')].forEach(el => new bootstrap.Tooltip(el));
+
+  // Cargar datos de clima en dropdown del navbar
+  cargarDatosClimaDropdown();
 
   if (sidebarToggle && sidebar && mainContent) {
     const toggleIcon = sidebarToggle.querySelector("i");
@@ -360,35 +455,21 @@ document.addEventListener("DOMContentLoaded", () => {
       btnRecalcularClima.textContent = "Recalculando...";
 
       try {
-        // 1. Guardar localidad usando Google Places Geocoding
-        const geocodeRes = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(localidad)}&key=${window.GOOGLE_MAPS_API_KEY}`);
-        const geocode = await geocodeRes.json();
-
-        if (!geocode.results || geocode.results.length === 0) {
-          mostrarToast("❌ No se encontró la localidad", "error");
-          return;
-        }
-
-        const location = geocode.results[0].geometry.location;
-        const nombreCompleto = geocode.results[0].formatted_address;
-
-        // 2. Guardar localidad en backend
+        // 1. Guardar localidad en backend (el backend hace el geocoding)
         const saveRes = await fetchProtegido("/api/localidad-outdoor/", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            nombre_localidad: nombreCompleto,
-            latitud: location.lat,
-            longitud: location.lng,
-            activo: true
+            nombre_localidad: localidad
           })
         });
 
         if (!saveRes.ok) {
-          throw new Error("No se pudo guardar la localidad");
+          const errorData = await saveRes.json();
+          throw new Error(errorData.error || "No se pudo guardar la localidad");
         }
 
-        // 3. Trigger recálculo con clima actual
+        // 2. Trigger recálculo con clima actual
         const recalcRes = await fetchProtegido("/api/recalcular-outdoor/", {
           method: "POST",
           headers: { "Content-Type": "application/json" }
@@ -401,12 +482,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const resultado = await recalcRes.json();
 
-        // 4. Mostrar resultado
+        // 3. Mostrar resultado
         mostrarToast(`✅ ${resultado.mensaje}
 🌤️ Temp: ${resultado.clima.temperatura_max.toFixed(1)}°C
 💧 Precipitación: ${resultado.clima.precipitacion.toFixed(1)}mm`, "success");
 
-        // 5. Refrescar lista de plantas
+        // 4. Refrescar lista de plantas
         setTimeout(() => {
           window.location.reload();
         }, 2000);
