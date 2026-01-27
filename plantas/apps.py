@@ -8,11 +8,14 @@ class PlantasConfig(AppConfig):
     def ready(self):
         """
         Called when Django starts.
-        Inicia el scheduler de riegos outdoor automáticos.
+        
+        NOTA: APScheduler deshabilitado - ahora usamos Render Cron Jobs.
+        El scheduler solo está disponible para testing local si es necesario.
         """
-        # Solo iniciar scheduler en proceso principal (no en reloader)
-        import os
-        if os.environ.get('RUN_MAIN') != 'true':
-            # Esto solo se ejecuta una vez, no en cada reload del dev server
-            from plantas.scheduler import start_scheduler
-            start_scheduler()
+        # APScheduler deshabilitado en favor de Render Cron Jobs
+        # Si necesitas usarlo localmente, descomentá las siguientes líneas:
+        
+        # import os
+        # if os.environ.get('RUN_MAIN') != 'true':
+        #     from plantas.scheduler import start_scheduler
+        #     start_scheduler()

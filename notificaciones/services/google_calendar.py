@@ -228,3 +228,37 @@ def create_riego_event(user, planta, fecha_riego, motivo=None):
     except Exception as e:
         print(f"Error al crear evento de riego para {planta.nombre_personalizado}: {e}")
         return None
+
+
+def update_calendar_event_for_plant(planta):
+    """
+    Actualiza el evento de calendario para una planta.
+    Borra el evento anterior (si existe) y crea uno nuevo con la fecha actualizada.
+    
+    Args:
+        planta: Instancia de Planta con fecha_ultimo_riego y frecuencia_riego_dias
+    
+    Returns:
+        dict: Evento creado con 'id' o None si hay error
+    """
+    from datetime import timedelta
+    
+    user = planta.usuario
+    
+    # Calcular fecha del próximo riego
+    fecha_proximo_riego = planta.fecha_ultimo_riego + timedelta(days=planta.frecuencia_riego_dias)
+    
+    # Borrar evento anterior si existe
+    if planta.google_calendar_event_id:
+        delete_calendar_event(user, planta.google_calendar_event_id)
+    
+    # Crear nuevo evento
+    motivo = "Riego recalculado automáticamente según clima outdoor"
+    nuevo_evento = create_riego_event(user, planta, fecha_proximo_riego, motivo)
+    
+    # Actualizar ID del evento en la planta
+    if nuevo_evento:
+        planta.google_calendar_event_id = nuevo_evento.get('id')
+        planta.save(update_fields=['google_calendar_event_id'])
+    
+    return nuevo_evento
