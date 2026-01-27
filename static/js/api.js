@@ -173,7 +173,21 @@ async function cargarDatosClimaDropdown() {
       // Verificar que los valores existan y no sean null
       if (tempIndoor !== null && tempIndoor !== undefined &&
         humIndoor !== null && humIndoor !== undefined) {
-        const htmlContent = `
+        // Desktop HTML (Dark text for light background)
+        const desktopHtml = `
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span><i class="bi bi-thermometer-half text-danger"></i> Temperatura:</span>
+            <strong>${tempIndoor}°C</strong>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-droplet-fill text-primary"></i> Humedad:</span>
+            <strong>${humIndoor}%</strong>
+          </div>
+          <small class="text-muted d-block mt-1">(Valores manuales)</small>
+        `;
+
+        // Mobile HTML (White text for dark background)
+        const mobileHtml = `
           <div class="d-flex justify-content-between align-items-center mb-1 text-white small">
             <span><i class="bi bi-thermometer-half text-danger"></i> Temperatura:</span>
             <strong>${tempIndoor}°C</strong>
@@ -184,15 +198,21 @@ async function cargarDatosClimaDropdown() {
           </div>
           <small class="text-white-50 d-block mt-1">(Valores manuales)</small>
         `;
-        indoorContainer.innerHTML = htmlContent;
-        if (indoorContainerMobile) indoorContainerMobile.innerHTML = htmlContent;
+
+        indoorContainer.innerHTML = desktopHtml;
+        if (indoorContainerMobile) indoorContainerMobile.innerHTML = mobileHtml;
       } else {
-        const noConfigHtml = '<small class="text-white-50">No configurado. <a href="#" class="text-info" onclick="document.getElementById(\'sidebar-toggle\').click(); return false;">Configurar</a></small>';
-        indoorContainer.innerHTML = noConfigHtml;
-        if (indoorContainerMobile) indoorContainerMobile.innerHTML = noConfigHtml;
+        const noConfigDesktop = '<small class="text-muted">No configurado. <a href="#" onclick="document.getElementById(\'sidebar-toggle\').click(); return false;">Configurar</a></small>';
+        const noConfigMobile = '<small class="text-white-50">No configurado. <a href="#" class="text-info" onclick="document.getElementById(\'sidebar-toggle\').click(); return false;">Configurar</a></small>';
+
+        indoorContainer.innerHTML = noConfigDesktop;
+        if (indoorContainerMobile) indoorContainerMobile.innerHTML = noConfigMobile;
       }
     } else {
-      indoorContainer.innerHTML = '<small class="text-muted">Error al cargar</small>';
+      const errorDesktop = '<small class="text-muted">Error al cargar</small>';
+      const errorMobile = '<small class="text-danger">Error al cargar</small>';
+      indoorContainer.innerHTML = errorDesktop;
+      if (indoorContainerMobile) indoorContainerMobile.innerHTML = errorMobile;
     }
 
     // Cargar datos outdoor
@@ -205,7 +225,33 @@ async function cargarDatosClimaDropdown() {
         const climaRes = await fetchProtegido(`/api/localidad-outdoor/clima/`);
         if (climaRes.ok) {
           const clima = await climaRes.json();
-          const outdoorHtml = `
+          // Desktop HTML
+          const outdoorHtmlDesktop = `
+            <div class="mb-2">
+              <i class="bi bi-geo-alt-fill text-success"></i>
+              <strong>${localidad.nombre_localidad}</strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span><i class="bi bi-thermometer-half text-danger"></i> Temp. Max.:</span>
+              <strong>${clima.temperatura_max?.toFixed(1) || '-'}°C</strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span><i class="bi bi-droplet-fill text-primary"></i> Humedad:</span>
+              <strong>${clima.humedad_promedio?.toFixed(0) || '-'}%</strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span><i class="bi bi-cloud-rain-fill text-info"></i> Lluvia:</span>
+              <strong>${clima.precipitacion_mm?.toFixed(1) || '0'}mm</strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+              <span><i class="bi bi-wind"></i> Viento:</span>
+              <strong>${clima.velocidad_viento_kmh?.toFixed(0) || '-'} km/h</strong>
+            </div>
+            <small class="text-muted d-block mt-1">Actualizado hoy</small>
+          `;
+
+          // Mobile HTML
+          const outdoorHtmlMobile = `
             <div class="mb-2 text-white small">
               <i class="bi bi-geo-alt-fill text-success"></i>
               <strong>${localidad.nombre_localidad}</strong>
@@ -228,33 +274,48 @@ async function cargarDatosClimaDropdown() {
             </div>
             <small class="text-white-50 d-block mt-1">Actualizado hoy</small>
           `;
-          outdoorContainer.innerHTML = outdoorHtml;
-          if (outdoorContainerMobile) outdoorContainerMobile.innerHTML = outdoorHtml;
+
+          outdoorContainer.innerHTML = outdoorHtmlDesktop;
+          if (outdoorContainerMobile) outdoorContainerMobile.innerHTML = outdoorHtmlMobile;
         } else {
-          const noDataHtml = `
+          const noDataDesktop = `
+            <div class="mb-2">
+              <i class="bi bi-geo-alt-fill text-success"></i>
+              <strong>${localidad.nombre_localidad}</strong>
+            </div>
+            <small class="text-muted">Clima no disponible</small>
+          `;
+          const noDataMobile = `
             <div class="mb-2 text-white small">
               <i class="bi bi-geo-alt-fill text-success"></i>
               <strong>${localidad.nombre_localidad}</strong>
             </div>
             <small class="text-white-50">Clima no disponible</small>
           `;
-          outdoorContainer.innerHTML = noDataHtml;
-          if (outdoorContainerMobile) outdoorContainerMobile.innerHTML = noDataHtml;
+          outdoorContainer.innerHTML = noDataDesktop;
+          if (outdoorContainerMobile) outdoorContainerMobile.innerHTML = noDataMobile;
         }
       } else {
-        const noConfigOutdoorHtml = '<small class="text-white-50">No configurado</small>';
-        outdoorContainer.innerHTML = noConfigOutdoorHtml;
-        if (outdoorContainerMobile) outdoorContainerMobile.innerHTML = noConfigOutdoorHtml;
+        const noConfigOutdoorDesktop = '<small class="text-muted">No configurado</small>';
+        const noConfigOutdoorMobile = '<small class="text-white-50">No configurado</small>';
+        outdoorContainer.innerHTML = noConfigOutdoorDesktop;
+        if (outdoorContainerMobile) outdoorContainerMobile.innerHTML = noConfigOutdoorMobile;
       }
     } else {
-      const noConfigOutdoorHtml = '<small class="text-white-50">No configurado</small>';
-      outdoorContainer.innerHTML = noConfigOutdoorHtml;
-      if (outdoorContainerMobile) outdoorContainerMobile.innerHTML = noConfigOutdoorHtml;
+      const noConfigOutdoorDesktop = '<small class="text-muted">No configurado</small>';
+      const noConfigOutdoorMobile = '<small class="text-white-50">No configurado</small>';
+      outdoorContainer.innerHTML = noConfigOutdoorDesktop;
+      if (outdoorContainerMobile) outdoorContainerMobile.innerHTML = noConfigOutdoorMobile;
     }
   } catch (error) {
     console.error('Error cargando datos de clima:', error);
-    indoorContainer.innerHTML = '<small class="text-danger">Error al cargar</small>';
-    outdoorContainer.innerHTML = '<small class="text-danger">Error al cargar</small>';
+    const errorHtml = '<small class="text-danger">Error al cargar</small>';
+
+    indoorContainer.innerHTML = errorHtml;
+    outdoorContainer.innerHTML = errorHtml;
+
+    if (indoorContainerMobile) indoorContainerMobile.innerHTML = errorHtml;
+    if (outdoorContainerMobile) outdoorContainerMobile.innerHTML = errorHtml;
   }
 }
 
