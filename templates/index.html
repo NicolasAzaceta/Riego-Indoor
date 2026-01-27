@@ -140,18 +140,46 @@
               <i class="bi bi-download me-2"></i> Instalar App
             </a>
 
-            <!-- Badge de configuración indoor en móvil -->
-            <div id="indoorConfigBadgeMobile"
-              class="badge bg-violeta d-none align-items-center gap-2 justify-content-center"
-              style="font-size: 0.95rem; padding: 0.65rem;">
-              <i class="bi bi-house-fill"></i>
-              <span id="indoorConfigTextMobile"></span>
-            </div>
+
 
             <!-- Contenedor para el indicador de temperatura -->
             <div id="temp-externa-container-mobile"></div>
             <!-- Contenedor para los botones de Google Calendar -->
             <div id="google-calendar-container-mobile"></div>
+
+            <!-- Información de Clima (Indoor/Outdoor) -->
+            <div class="border border-secondary rounded p-2 mt-2">
+              <div class="small text-white mb-2">
+                <i class="bi bi-cloud-sun me-1"></i> <strong>CLIMA</strong>
+              </div>
+
+              <!-- Indoor Info -->
+              <div class="mb-2">
+                <div class="text-white small mb-1">
+                  <i class="bi bi-house-fill me-1"></i> Indoor
+                </div>
+                <div id="indoor-clima-info-mobile" class="ps-3">
+                  <div class="d-flex align-items-center gap-2 text-white-50 small">
+                    <i class="bi bi-arrow-repeat"></i>
+                    <span>Cargando...</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Outdoor Info -->
+              <div>
+                <div class="text-white small mb-1">
+                  <i class="bi bi-cloud-sun-fill me-1"></i> Outdoor
+                </div>
+                <div id="outdoor-clima-info-mobile" class="ps-3">
+                  <div class="d-flex align-items-center gap-2 text-white-50 small">
+                    <i class="bi bi-arrow-repeat"></i>
+                    <span>Cargando...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Botón de cerrar sesión -->
             <a class="btn btn-rojo-outline" id="btnLogoutMobile" href="javascript:void(0);">
               <i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión

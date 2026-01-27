@@ -330,8 +330,6 @@ async function cargarConfigIndoor() {
       // Mostrar badge en el navbar (desktop y mobile) si hay configuración activa
       const badge = document.getElementById('indoorConfigBadge');
       const badgeText = document.getElementById('indoorConfigText');
-      const badgeMobile = document.getElementById('indoorConfigBadgeMobile');
-      const badgeTextMobile = document.getElementById('indoorConfigTextMobile');
 
       if (data.temperatura_promedio !== null || data.humedad_relativa !== null) {
         let texto = '';
@@ -350,22 +348,14 @@ async function cargarConfigIndoor() {
           badge.classList.add('d-flex');
         }
 
-        // Mobile badge
-        if (badgeMobile && badgeTextMobile) {
-          badgeTextMobile.textContent = texto;
-          badgeMobile.classList.remove('d-none');
-          badgeMobile.classList.add('d-flex');
-        }
+
       } else {
         // Ocultar ambos si no hay config
         if (badge) {
           badge.classList.add('d-none');
           badge.classList.remove('d-flex');
         }
-        if (badgeMobile) {
-          badgeMobile.classList.add('d-none');
-          badgeMobile.classList.remove('d-flex');
-        }
+
       }
     }
   } catch (error) {
