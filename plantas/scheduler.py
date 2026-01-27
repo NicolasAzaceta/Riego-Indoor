@@ -172,11 +172,11 @@ def start_scheduler():
     
     scheduler = BackgroundScheduler()
     
-    # Task diario a las 3:00 AM UTC
+    # Task diario a las 6:00 AM Argentina (9:00 AM UTC)
     scheduler.add_job(
         recalcular_riegos_outdoor_diario,
         'cron',
-        hour=3,
+        hour=9,
         minute=0,
         id='outdoor_irrigation_recalc',
         replace_existing=True
