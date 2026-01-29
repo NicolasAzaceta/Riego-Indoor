@@ -235,6 +235,26 @@
               <button class="btn btn-white-outline w-100" id="btnRecalcularClima">Usar Clima Actual</button>
             </div>
           </div>
+
+          <!-- Separador sutil -->
+          <!-- Separador sutil -->
+          <hr class="mx-3 my-4" style="border-top: 2px solid #8A2BE2; opacity: 1;">
+
+          <!-- Nueva sección: Notificaciones -->
+          <div class="mt-2">
+            <h6 class="sidebar-subtitle collapsed" data-bs-toggle="collapse" href="#collapseNotificaciones"
+              role="button" aria-expanded="false" aria-controls="collapseNotificaciones">
+              🔔 Notificaciones
+            </h6>
+            <div class="collapse" id="collapseNotificaciones" data-bs-parent="#accordionConfiguracion">
+              <p class="small mt-2">Elegí a qué hora querés que se creen los eventos de riego en tu calendario.</p>
+              <div class="mb-3 pt-2">
+                <label for="inputHoraCalendario" class="form-label small text-white">Hora del evento:</label>
+                <input type="time" class="form-control" id="inputHoraCalendario">
+              </div>
+              <button class="btn btn-white-outline w-100" id="btnGuardarHoraCalendario">Guardar Preferencia</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -276,7 +296,8 @@
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header justify-content-center">
-            <h5 class="modal-title text-center w-100" id="modalConfirmarDesvincularLabel">¿Desvincular Calendario?</h5>
+            <h5 class="modal-title text-center w-100" id="modalConfirmarDesvincularLabel">¿Desvincular Calendario?
+            </h5>
           </div>
           <div class="modal-body text-center">
             Se eliminarán los eventos de riego ya creados en tu Google Calendar.
@@ -284,6 +305,26 @@
           <div class="modal-footer justify-content-end">
             <button type="button" class="btn btn-violeta-outline" data-bs-dismiss="modal">Cancelar</button>
             <button type="button" class="btn btn-rojo-outline" id="btnConfirmarDesvincular">Desvincular</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de aviso: Vincular Calendario Primero -->
+    <div class="modal fade" id="modalVincularPrimero" tabindex="-1" aria-labelledby="modalVincularPrimeroLabel"
+      aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header justify-content-center">
+            <h5 class="modal-title text-center w-100" id="modalVincularPrimeroLabel">¡Atención!</h5>
+          </div>
+          <div class="modal-body text-center">
+            <p>Para configurar la hora de los eventos, primero debés vincular tu cuenta de Google Calendar.</p>
+            <p class="small text-muted">Podés hacerlo desde el botón "Vincular Calendario" en la barra superior.
+            </p>
+          </div>
+          <div class="modal-footer justify-content-center">
+            <button type="button" class="btn btn-violeta-solid" data-bs-dismiss="modal">Entendido</button>
           </div>
         </div>
       </div>

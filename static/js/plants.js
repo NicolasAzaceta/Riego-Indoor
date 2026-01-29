@@ -80,13 +80,30 @@ async function eliminarPlanta(id, cardElement) {
 }
 
 // ✅ Confirmación desde el modal
+// ✅ Confirmación desde el modal
 document.getElementById("btnConfirmarEliminar").addEventListener("click", async () => {
+  const btnConfirmar = document.getElementById("btnConfirmarEliminar");
+
   if (plantaAEliminar) {
-    await eliminarPlanta(plantaAEliminar.id, plantaAEliminar.card);
-    plantaAEliminar = null;
+    // 1. Mostrar spinner
+    btnConfirmar.disabled = true;
+    const textoOriginal = btnConfirmar.innerHTML;
+    btnConfirmar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Eliminando...';
+
+    try {
+      await eliminarPlanta(plantaAEliminar.id, plantaAEliminar.card);
+    } finally {
+      // 2. Restaurar botón y limpiar referencia
+      btnConfirmar.disabled = false;
+      btnConfirmar.innerHTML = textoOriginal;
+      plantaAEliminar = null;
+
+      // 3. Cerrar modal (incluso si hubo error, o podríamos dejarlo abierto si falla... 
+      // por ahora mantenemos el comportamiento de cerrar siempre para limpiar UI)
+      const modal = bootstrap.Modal.getInstance(document.getElementById("modalConfirmar"));
+      if (modal) modal.hide();
+    }
   }
-  const modal = bootstrap.Modal.getInstance(document.getElementById("modalConfirmar"));
-  if (modal) modal.hide();
 });
 
 async function obtenerPlanta(id) {
@@ -432,4 +449,82 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnGuardarIndoor) {
     btnGuardarIndoor.addEventListener('click', guardarConfigIndoor);
   }
+
+  // ==================== CONFIGURACIÓN CALENDARIO ====================
+  // Estado local para saber si está vinculado (cargado al abrir el acordeón o inicializar)
+  let isCalendarLinked = false;
+
+  async function cargarConfigCalendario() {
+    try {
+      const res = await fetchProtegido('/api/configuracion-calendario/', {
+        method: 'GET'
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const inputHora = document.getElementById('inputHoraCalendario');
+
+        if (inputHora && data.google_calendar_event_time) {
+          // El formato viene HH:MM:SS, el input time espera HH:MM
+          // Cortamos los segundos si vienen
+          inputHora.value = data.google_calendar_event_time.substring(0, 5);
+        }
+        isCalendarLinked = data.is_linked;
+      }
+    } catch (error) {
+      console.error("Error al cargar config calendario:", error);
+    }
+  }
+
+  async function guardarConfigCalendario() {
+    // 1. Validar vinculación
+    if (!isCalendarLinked) {
+      const modal = new bootstrap.Modal(document.getElementById('modalVincularPrimero'));
+      modal.show();
+      return;
+    }
+
+    const inputHora = document.getElementById('inputHoraCalendario');
+    const btnGuardar = document.getElementById('btnGuardarHoraCalendario');
+    const hora = inputHora.value;
+
+    if (!hora) {
+      mostrarToast("⚠️ Por favor, seleccioná una hora.", "warning");
+      return;
+    }
+
+    btnGuardar.disabled = true;
+    btnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...';
+
+    try {
+      const res = await fetchProtegido('/api/configuracion-calendario/', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ time: hora })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        mostrarToast(`✅ ${data.message}`, "success");
+      } else {
+        const error = await res.json();
+        mostrarToast(`❌ ${error.error || "Error al guardar"}`, "danger");
+      }
+    } catch (error) {
+      console.error(error);
+      mostrarToast("❌ Error de conexión", "danger");
+    } finally {
+      btnGuardar.disabled = false;
+      btnGuardar.innerHTML = 'Guardar Preferencia';
+    }
+  }
+
+  // Cargar configuración al iniciar
+  cargarConfigCalendario();
+
+  const btnGuardarCal = document.getElementById('btnGuardarHoraCalendario');
+  if (btnGuardarCal) {
+    btnGuardarCal.addEventListener('click', guardarConfigCalendario);
+  }
+
+
 });

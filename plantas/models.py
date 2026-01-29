@@ -104,7 +104,7 @@ class Planta(models.Model):
         default='indoor',
         help_text="Tipo de cultivo: indoor (temp/humedad fijas) u outdoor (clima automático)"
     )
-    tamano_maceta_litros = models.FloatField(validators=[MinValueValidator(1.0)], help_text="Tamaño en litros (mínimo 1L)")
+    tamano_maceta_litros = models.FloatField(validators=[MinValueValidator(0.1)], help_text="Tamaño en litros (mínimo 0.1L)")
     fecha_ultimo_riego = models.DateField()
     en_floracion = models.BooleanField(default=False)
     google_calendar_event_id = models.CharField(max_length=255, blank=True, null=True, help_text="ID del evento de Google Calendar para el próximo riego")
@@ -115,7 +115,7 @@ class Planta(models.Model):
         Calcula días restantes, cantidad de agua, y estado de riego.
         Ajusta según temperatura y humedad externas (si se proporcionan).
         """
-        litros = max(self.tamano_maceta_litros, 1.0)  # Mínimo 1L
+        litros = max(self.tamano_maceta_litros, 0.1)  # Mínimo 0.1L
         size = self.tamano_planta
         en_flor = self.en_floracion
 

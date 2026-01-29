@@ -19,6 +19,7 @@ class Profile(models.Model):
     google_access_token = models.TextField(blank=True, null=True, help_text="Token de acceso de Google OAuth2")
     google_refresh_token = models.TextField(blank=True, null=True, help_text="Token de refresco de Google OAuth2")
     google_token_expiry = models.DateTimeField(blank=True, null=True, help_text="Fecha de expiración del token de Google")
+    google_calendar_event_time = models.TimeField(default="09:00:00", help_text="Hora del día preferida para los eventos de calendario")
 
     def __str__(self):
         return f"Profile: {getattr(self.user, 'username', self.user)}"

@@ -46,6 +46,13 @@ document.addEventListener("DOMContentLoaded", () => {
       en_floracion: enFloracion,
     };
 
+    const btnSubmit = form.querySelector('button[type="submit"]');
+    const originalBtnText = btnSubmit.innerHTML;
+
+    // Deshabilitar botón y mostrar spinner
+    btnSubmit.disabled = true;
+    btnSubmit.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...`;
+
     try {
       const res = await fetchProtegido("/api/plantas/", {
         method: "POST",
@@ -65,7 +72,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     } catch (err) {
       console.error(err);
-      alert("Hubo un problema al agregar la planta. Revisá los datos e intentá de nuevo.");
+      mostrarToast("❌ Hubo un problema al agregar la planta. Revisá los datos.", "danger");
+    } finally {
+      // Restaurar botón (si no redirige inmediatamente o si hubo error)
+      if (btnSubmit.disabled) { // Pequeño check por si acaso
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = originalBtnText;
+      }
     }
   });
 });

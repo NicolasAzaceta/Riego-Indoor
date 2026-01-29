@@ -34,7 +34,9 @@ def google_calendar_auth(request):
         user = User.objects.get(id=user_id)
         login(request, user) # Iniciamos una sesión de Django para este usuario
     except Exception as e:
-        return JsonResponse({'error': 'Token inválido o expirado'}, status=401)
+        print(f"DEBUG AUTH ERROR: {str(e)}")
+        print(f"DEBUG TOKEN: {jwt_token}")
+        return JsonResponse({'error': f'Token inválido o expirado: {str(e)}'}, status=401)
 
     flow = get_oauth_flow()
     authorization_url, state = flow.authorization_url(
@@ -61,4 +63,21 @@ def google_calendar_callback(request):
     profile.google_refresh_token = credentials.refresh_token
     profile.google_token_expiry = credentials.expiry
     profile.save()
+    
+    # --- NUEVO: Rellenar eventos faltantes en background ---
+    import threading
+    from .services.google_calendar import populate_missing_events
+    
+    def run_population(user_inst):
+        try:
+            print(f"Iniciando población de eventos para {user_inst.username}...")
+            count, errs = populate_missing_events(user_inst)
+            print(f"Población finalizada: {count} eventos creados, {len(errs)} errores.")
+        except Exception as e:
+            print(f"Error en thread de población: {e}")
+
+    t = threading.Thread(target=run_population, args=(request.user,))
+    t.daemon = True
+    t.start()
+    
     return redirect('/dashboard/')
