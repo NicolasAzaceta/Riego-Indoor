@@ -10,7 +10,9 @@ from googleapiclient.discovery import build
 from google.oauth2 import service_account
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
+from google_auth_oauthlib.flow import Flow
 from google.auth.transport import requests as google_requests # Para el refresh del token
+from googleapiclient.errors import HttpError # Importar HttpError
 
 # --- Componentes de Django ---
 from django.conf import settings
@@ -171,8 +173,14 @@ def delete_calendar_event(user, event_id):
         service = get_user_calendar_service(user)
         service.events().delete(calendarId='primary', eventId=event_id).execute()
         return True
-    except Exception as e:
+    except HttpError as e:
+        # Si el evento ya no existe (404) o fue borrado (410), consideramos que el borrado fue exitoso
+        if e.resp.status in [404, 410]:
+            return True
         print(f"Error al borrar evento {event_id}: {e}")
+        return False
+    except Exception as e:
+        print(f"Error genérico al borrar evento {event_id}: {e}")
         return False
 
 
@@ -194,17 +202,30 @@ def create_riego_event(user, planta, fecha_riego, motivo=None):
         
         service = get_user_calendar_service(user)
         
-        # Crear evento a las 9 AM del día indicado
-        start_dt = ensure_timezone(datetime.combine(fecha_riego, datetime.min.time().replace(hour=9)))
-        end_dt = start_dt + timedelta(hours=1)
+        # Obtener hora preferida del usuario (o default 9 AM)
+        hora_riego = datetime.min.time().replace(hour=9)
+        if hasattr(user, 'profile') and user.profile.google_calendar_event_time:
+            hora_riego = user.profile.google_calendar_event_time
+            
+        # Crear evento a la hora configurada del día indicado
+        start_dt = ensure_timezone(datetime.combine(fecha_riego, hora_riego))
+        end_dt = start_dt + timedelta(minutes=30)
         
-        # Descripción
-        descripcion = f"💧 Riego programado para {planta.nombre_personalizado}"
+        # Obtener datos de riego para la descripción enriquecida
+        calculos = planta.calculos_riego()
+        agua_ml = calculos.get('recommended_water_ml', 'Variable')
+        
+        # Descripción enriquecida (Igual que en signals.py)
+        descripcion = (
+            f'¡Es hora de regar tu planta "{planta.nombre_personalizado}"!\n\n'
+            f'💧 Cantidad de agua recomendada: {agua_ml} ml.\n'
+            f'🪴 Tipo de planta: {planta.tipo_planta}.'
+        )
         if motivo:
-            descripcion += f"\n\n{motivo}"
+            descripcion += f"\n\nNota: {motivo}"
         
         body = {
-            'summary': f"Regar {planta.nombre_personalizado}",
+            'summary': f"💧 Regar: {planta.nombre_personalizado}",
             'description': descripcion,
             'start': {
                 'dateTime': start_dt.isoformat(),
@@ -214,11 +235,9 @@ def create_riego_event(user, planta, fecha_riego, motivo=None):
                 'dateTime': end_dt.isoformat(),
                 'timeZone': DEFAULT_TZ,
             },
+            'colorId': '9',  # 9 = Azul "Blueberry" (Coherencia visual)
             'reminders': {
-                'useDefault': False,
-                'overrides': [
-                    {'method': 'popup', 'minutes': 60},  # 1 hora antes
-                ],
+                'useDefault': True, # Usar config del usuario como en signals
             },
         }
         
@@ -245,15 +264,16 @@ def update_calendar_event_for_plant(planta):
     
     user = planta.usuario
     
-    # Calcular fecha del próximo riego
-    fecha_proximo_riego = planta.fecha_ultimo_riego + timedelta(days=planta.frecuencia_riego_dias)
+    # Calcular fecha del próximo riego usando la lógica del modelo
+    datos_riego = planta.calculos_riego()
+    fecha_proximo_riego = datos_riego['next_watering_date']
     
     # Borrar evento anterior si existe
     if planta.google_calendar_event_id:
         delete_calendar_event(user, planta.google_calendar_event_id)
     
     # Crear nuevo evento
-    motivo = "Riego recalculado automáticamente según clima outdoor"
+    motivo = "Riego recalculado automáticamente según nueva hora preferida"
     nuevo_evento = create_riego_event(user, planta, fecha_proximo_riego, motivo)
     
     # Actualizar ID del evento en la planta
@@ -262,3 +282,72 @@ def update_calendar_event_for_plant(planta):
         planta.save(update_fields=['google_calendar_event_id'])
     
     return nuevo_evento
+
+
+def recalculate_all_future_events(user):
+    """
+    Recalcula y actualiza todos los eventos futuros de riego para un usuario.
+    Se llama cuando el usuario cambia su hora preferida de riego.
+    """
+    from plantas.models import Planta
+    
+    # Buscar todas las plantas del usuario que tengan un evento futuro programado
+    plantas_con_evento = Planta.objects.filter(
+        usuario=user,
+        google_calendar_event_id__isnull=False
+    )
+    
+    count = 0
+    errores = []
+    
+    for planta in plantas_con_evento:
+        try:
+            # Solo actualizamos si la fecha de riego es futura o hoy
+            if planta.fecha_ultimo_riego: # Nota: fecha_ultimo_riego es la base, el evento es para el PROXIMO
+                 # Calculamos cuando DEBERIA ser el próximo evento basado en la lógica actual
+                 # (Para simplificar, usamos la lógica de update_calendar_event_for_plant que ya hace todo)
+                 update_calendar_event_for_plant(planta)
+                 count += 1
+        except Exception as e:
+            # Capturamos el mensaje de error para diagnóstico
+            error_msg = f"Planta {planta.id}: {str(e)}"
+            print(f"Error recalculando evento: {error_msg}")
+            errores.append(error_msg)
+            
+    return count, errores
+
+
+def populate_missing_events(user):
+    """
+    Busca todas las plantas del usuario que NO tienen evento de calendario y lo crea.
+    Ideal para llamar justo después de que el usuario vincula su cuenta.
+    """
+    from plantas.models import Planta
+    
+    # 1. Buscamos plantas sin evento
+    plantas_sin_evento = Planta.objects.filter(
+        usuario=user,
+        google_calendar_event_id__isnull=True
+    )
+    
+    count = 0
+    errores = []
+    
+    print(f"Buscando eventos faltantes para {user.username}... Encontradas {plantas_sin_evento.count()} plantas.")
+
+    for planta in plantas_sin_evento:
+        try:
+            # 2. Usamos update_calendar_event_for_plant que ya tiene la lógica de:
+            # - Calcular fecha
+            # - Borrar anterior (aquí no habrá, pero no importa)
+            # - Crear nuevo
+            # - Guardar ID
+            evento = update_calendar_event_for_plant(planta)
+            if evento:
+                count += 1
+        except Exception as e:
+            msg = f"Error creando evento inicial para {planta.nombre_personalizado}: {e}"
+            print(msg)
+            errores.append(msg)
+            
+    return count, errores

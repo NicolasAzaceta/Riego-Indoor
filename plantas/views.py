@@ -271,15 +271,26 @@ class GoogleCalendarDisconnectView(APIView):
         # 1. Si el usuario tiene un token, intentar eliminar los eventos existentes ANTES de borrar el token.
         if profile.google_access_token:
             try:
-                service = get_user_calendar_service(user)
+                # Usamos la función helper para borrar eventos (maneja 404/410)
+                from notificaciones.services.google_calendar import delete_calendar_event
+                
+                # Restauramos la query que se perdió en la edición anterior
                 plantas_con_evento = Planta.objects.filter(usuario=user, google_calendar_event_id__isnull=False)
                 
                 for planta in plantas_con_evento:
-                    try:
-                        service.events().delete(calendarId='primary', eventId=planta.google_calendar_event_id).execute()
+                    # Intentamos borrar de Google Calendar
+                    borrado_exitoso = delete_calendar_event(user, planta.google_calendar_event_id)
+                    
+                    if borrado_exitoso:
                         print(f"Evento '{planta.google_calendar_event_id}' de la planta '{planta.nombre_personalizado}' eliminado por desvinculación.")
-                    except Exception as e:
-                        print(f"No se pudo eliminar el evento '{planta.google_calendar_event_id}' (puede que ya no exista): {e}")
+                    else:
+                        print(f"No se pudo confirmar el borrado del evento '{planta.google_calendar_event_id}' de '{planta.nombre_personalizado}'.")
+
+                    # CRÍTICO: Siempre limpiamos el ID en la base de datos para no quedar desincronizados.
+                    # Si el evento sigue en Google (por error), es mejor perder el link que tener un ID fantasma.
+                    planta.google_calendar_event_id = None
+                    planta.save(update_fields=['google_calendar_event_id'])
+
             except Exception as e:
                 # Si falla la obtención del servicio (ej. token expirado), solo lo informamos y continuamos.
                 print(f"No se pudieron eliminar los eventos del calendario al desvincular (posiblemente el token ya no era válido): {e}")
@@ -419,45 +430,65 @@ class PlantaViewSet(viewsets.ModelViewSet):
     def historial(self, request, pk=None):
         """
         Devuelve el historial de riegos y estadísticas para una planta específica.
-        Responde con un JSON que contiene:
-        - `estadisticas`: Datos agregados como promedios, totales, etc.
-        - `historial_riegos`: Una lista de todos los registros de riego.
-        - `tendencias`: Análisis de tendencias en el patrón de riego.
-        - `anomalias`: Detección de patrones inusuales.
+        Optimizado para reducir consultas a la base de datos.
         """
         planta = self.get_object()
-        historial_riegos_qs = planta.riegos.all().order_by('-fecha')
+        
+        # Traemos todos los riegos ordenados en una sola query
+        # Usamos list() para evaluar el queryset una sola vez y trabajar en memoria
+        # ya que necesitamos iterar varias veces sobre los mismos datos (análisis, gráfico, tabla)
+        todos_riegos = list(planta.riegos.all().order_by('-fecha'))
+        
+        if not todos_riegos:
+            # Respuesta rápida si no hay datos
+            return Response({
+                'estadisticas': {
+                    'total_riegos': 0, 'total_agua_ml': 0, 'promedio_agua_ml': 0,
+                    'max_agua_ml': 0, 'min_agua_ml': 0, 'primer_riego_fecha': None,
+                    'ultimo_riego_fecha': None, 'frecuencia_promedio_dias': None
+                },
+                'historial_riegos': [],
+                'tendencias': {},
+                'anomalias': []
+            })
 
-        # --- 1. Cálculo de Estadísticas ---
-        # Usamos el ORM de Django para que la base de datos haga el trabajo pesado.
-        estadisticas_db = historial_riegos_qs.aggregate(
-            total_riegos=Count('id'),
-            total_agua_ml=Sum(Coalesce('cantidad_agua_ml', Value(0))),
-            promedio_agua_ml=Avg(Coalesce('cantidad_agua_ml', Value(0))),
-            max_agua_ml=Max('cantidad_agua_ml'),
-            min_agua_ml=Min('cantidad_agua_ml'),
-            primer_riego_fecha=Min('fecha'),
-            ultimo_riego_fecha=Max('fecha')
-        )
-
-        # --- Cálculo de Frecuencia Promedio (requiere un poco de Python) ---
+        # --- 1. Cálculo de Estadísticas (en Python para evitar otra query) ---
+        total_riegos = len(todos_riegos)
+        cantidades = [r.cantidad_agua_ml for r in todos_riegos if r.cantidad_agua_ml is not None]
+        fechas = [r.fecha for r in todos_riegos]
+        
+        total_agua = sum(cantidades)
+        promedio_agua = total_agua / len(cantidades) if cantidades else 0
+        max_agua = max(cantidades) if cantidades else 0
+        min_agua = min(cantidades) if cantidades else 0
+        
+        # --- Cálculo de Frecuencia Promedio ---
         frecuencia_promedio_dias = None
-        if historial_riegos_qs.count() > 1:
-            # Obtenemos solo las fechas, ya ordenadas por el queryset
-            fechas_riegos = list(historial_riegos_qs.values_list('fecha', flat=True))
-            # Calculamos la diferencia en días entre riegos consecutivos
-            diferencias = [(fechas_riegos[i-1] - fechas_riegos[i]).days for i in range(1, len(fechas_riegos))]
+        if total_riegos > 1:
+            diferencias = [(fechas[i] - fechas[i+1]).days for i in range(len(fechas)-1)]
             if diferencias:
                 frecuencia_promedio_dias = sum(diferencias) / len(diferencias)
 
+        estadisticas = {
+            'total_riegos': total_riegos,
+            'total_agua_ml': total_agua,
+            'promedio_agua_ml': round(promedio_agua, 1),
+            'max_agua_ml': max_agua,
+            'min_agua_ml': min_agua,
+            'primer_riego_fecha': fechas[-1],   # El último de la lista (porque está ordenado DESC) es el primero cronológicamente
+            'ultimo_riego_fecha': fechas[0],    # El primero de la lista es el último cronológicamente
+            'frecuencia_promedio_dias': round(frecuencia_promedio_dias, 1) if frecuencia_promedio_dias is not None else None,
+        }
+
         # --- 2. Análisis de Tendencias ---
         tendencias = {}
-        if historial_riegos_qs.count() >= 5:
-            # Comparar últimos 5 riegos vs promedio general
-            ultimos_5 = list(historial_riegos_qs.values_list('fecha', flat=True)[:5])
-            diferencias_ultimos = [(ultimos_5[i-1] - ultimos_5[i]).days for i in range(1, len(ultimos_5))]
+        if total_riegos >= 5 and frecuencia_promedio_dias:
+            # Últimos 5 riegos (ya los tenemos en memoria)
+            # fechas[0] es el más reciente, fechas[4] es el 5to más reciente
+            ultimos_5_fechas = fechas[:5]
+            diferencias_ultimos = [(ultimos_5_fechas[i] - ultimos_5_fechas[i+1]).days for i in range(len(ultimos_5_fechas)-1)]
             
-            if diferencias_ultimos and frecuencia_promedio_dias:
+            if diferencias_ultimos:
                 frecuencia_reciente = sum(diferencias_ultimos) / len(diferencias_ultimos)
                 variacion = frecuencia_reciente - frecuencia_promedio_dias
                 
@@ -477,52 +508,38 @@ class PlantaViewSet(viewsets.ModelViewSet):
         # --- 3. Detección de Anomalías ---
         anomalias = []
         
-        # Detectar riegos muy frecuentes (3 o más riegos en 3 días)
-        if historial_riegos_qs.count() >= 3:
-            ultimos_3 = list(historial_riegos_qs.values_list('fecha', flat=True)[:3])
-            dias_entre_ultimos_3 = (ultimos_3[0] - ultimos_3[2]).days
-            
+        # Riegos frecuentes
+        if total_riegos >= 3:
+            # Analizamos los últimos 3 riegos
+            dias_entre_ultimos_3 = (fechas[0] - fechas[2]).days
             if dias_entre_ultimos_3 <= 3:
                 anomalias.append({
                     'tipo': 'riegos_frecuentes',
-                    'mensaje': f"⚠️ Se detectaron {len(ultimos_3)} riegos en {dias_entre_ultimos_3} días. Verificá si la planta necesita tanta agua.",
+                    'mensaje': f"⚠️ Se detectaron 3 riegos en {dias_entre_ultimos_3} días. Verificá si la planta necesita tanta agua.",
                     'severidad': 'media'
                 })
         
-        # Detectar cantidades anormales de agua
-        if estadisticas_db['promedio_agua_ml'] and estadisticas_db['promedio_agua_ml'] > 0:
-            riegos_recientes = historial_riegos_qs[:5]
-            for riego in riegos_recientes:
-                if riego.cantidad_agua_ml:
-                    if riego.cantidad_agua_ml > estadisticas_db['promedio_agua_ml'] * 2:
-                        anomalias.append({
-                            'tipo': 'agua_excesiva',
-                            'mensaje': f"⚠️ Riego del {riego.fecha}: {riego.cantidad_agua_ml}ml es más del doble del promedio ({round(estadisticas_db['promedio_agua_ml'])}ml)",
-                            'severidad': 'alta',
-                            'fecha': riego.fecha
-                        })
-                    elif riego.cantidad_agua_ml < estadisticas_db['promedio_agua_ml'] * 0.3:
-                        anomalias.append({
-                            'tipo': 'agua_insuficiente',
-                            'mensaje': f"ℹ️ Riego del {riego.fecha}: {riego.cantidad_agua_ml}ml es menos del 30% del promedio ({round(estadisticas_db['promedio_agua_ml'])}ml)",
-                            'severidad': 'baja',
-                            'fecha': riego.fecha
-                        })
+        # Cantidades anormales (analizamos solo los últimos 5 para no saturar)
+        for riego in todos_riegos[:5]:
+            if riego.cantidad_agua_ml:
+                if promedio_agua > 0 and riego.cantidad_agua_ml > promedio_agua * 2:
+                    anomalias.append({
+                        'tipo': 'agua_excesiva',
+                        'mensaje': f"⚠️ Riego del {riego.fecha}: {riego.cantidad_agua_ml}ml es más del doble del promedio ({round(promedio_agua)}ml)",
+                        'severidad': 'alta',
+                        'fecha': riego.fecha
+                    })
+                elif promedio_agua > 0 and riego.cantidad_agua_ml < promedio_agua * 0.3:
+                    anomalias.append({
+                        'tipo': 'agua_insuficiente',
+                        'mensaje': f"ℹ️ Riego del {riego.fecha}: {riego.cantidad_agua_ml}ml es menos del 30% del promedio ({round(promedio_agua)}ml)",
+                        'severidad': 'baja',
+                        'fecha': riego.fecha
+                    })
 
-        # --- 4. Construcción del objeto de respuesta ---
-        estadisticas = {
-            'total_riegos': estadisticas_db['total_riegos'] or 0,
-            'total_agua_ml': estadisticas_db['total_agua_ml'] or 0,
-            'promedio_agua_ml': round(estadisticas_db['promedio_agua_ml'], 1) if estadisticas_db['promedio_agua_ml'] else 0,
-            'max_agua_ml': estadisticas_db['max_agua_ml'] or 0,
-            'min_agua_ml': estadisticas_db['min_agua_ml'] or 0,
-            'primer_riego_fecha': estadisticas_db['primer_riego_fecha'],
-            'ultimo_riego_fecha': estadisticas_db['ultimo_riego_fecha'],
-            'frecuencia_promedio_dias': round(frecuencia_promedio_dias, 1) if frecuencia_promedio_dias is not None else None,
-        }
-
-        # Serializamos el historial para la segunda parte de la respuesta
-        serializer = RiegoSerializer(historial_riegos_qs, many=True)
+        # Serializamos usando el serializer pero con many=True sobre la lista que ya tenemos
+        serializer = RiegoSerializer(todos_riegos, many=True)
+        
         return Response({
             'estadisticas': estadisticas, 
             'historial_riegos': serializer.data,
@@ -540,13 +557,14 @@ class RiegoViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated, IsOwner]
 
     def get_queryset(self):
-        qs = Riego.objects.select_related("planta", "planta__usuario").all().order_by("-fecha", "-id")
-        qs = [r for r in qs if r.planta.usuario == self.request.user]
+        queryset = Riego.objects.select_related("planta").filter(
+            planta__usuario=self.request.user
+        ).order_by("-fecha", "-id")
+
         planta_id = self.request.query_params.get("planta")
         if planta_id:
-            qs = [r for r in qs if str(r.planta_id) == str(planta_id)]
-        # Convertimos a queryset-like (lista está bien para ReadOnly con DRF, pero si querés queryset real, usá filtrado por ORM)
-        from django.db.models.query import QuerySet
-        return qs  # DRF acepta iterables; si preferís, cambiamos el enfoque a ORM puro.
+            queryset = queryset.filter(planta_id=planta_id)
+        
+        return queryset
 
 

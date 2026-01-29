@@ -81,7 +81,8 @@
 
       <div class="mb-3">
         <label for="maceta" class="form-label">Tamaño de la maceta en litros<span style="color: red"> *</span></label>
-        <input type="number" class="form-control" id="maceta" name="maceta" placeholder="Ej: 5" required />
+        <input type="number" class="form-control" id="maceta" name="maceta" placeholder="Ej: 5" required step="0.1"
+          min="0.1" />
       </div>
 
       <input class="form-check-input" type="checkbox" id="enFloracion" name="enFloracion">
@@ -111,7 +112,7 @@
 
   {% load static %}
   <script type="module" src="{% static 'js/api.js' %}"></script>
-  <script type="module" src="{% static 'js/add.js' %}" defer></script>
+  <script type="module" src="{% static 'js/add.js' %}?v=2" defer></script>
 </body>
 
 </html>
