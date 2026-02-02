@@ -23,6 +23,23 @@ export function mostrarToast(mensaje, tipo = "success") {
 
 }
 
+export async function eliminarCuenta() {
+  try {
+    const response = await fetchProtegido('/api/auth/delete-account/', {
+      method: 'POST'
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Error al eliminar cuenta');
+    }
+
+    return await response.json();
+  } catch (error) {
+    throw error;
+  }
+}
+
 export function iniciarVinculacionGoogle() {
   // Simplemente redirigimos al usuario a la vista de inicio de autenticación del backend.
   // El backend se encargará de todo el flujo de OAuth.
@@ -361,11 +378,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const sidebar = document.getElementById("sidebar");
   const mainContent = document.getElementById("main-content");
 
+  // Detectar si estamos en una página pública (no requiere autenticación)
+  const publicPages = ['/', '/login/', '/register/', '/privacy/', '/terms/'];
+  const isPublicPage = publicPages.includes(window.location.pathname);
+
   // Inicializar todos los tooltips de la página.
   [...document.querySelectorAll('[data-bs-toggle="tooltip"]')].forEach(el => new bootstrap.Tooltip(el));
 
-  // Cargar datos de clima en dropdown del navbar
-  cargarDatosClimaDropdown();
+  // Solo cargar datos de clima si NO estamos en página pública
+  if (!isPublicPage) {
+    cargarDatosClimaDropdown();
+  }
 
   if (sidebarToggle && sidebar && mainContent) {
     const toggleIcon = sidebarToggle.querySelector("i");
@@ -484,8 +507,10 @@ document.addEventListener("DOMContentLoaded", () => {
     actualizarDisplayTemperaturaExterna(JSON.parse(climaGuardado));
   }
 
-  // Verificamos el estado de la vinculación al cargar la página.
-  checkGoogleCalendarStatus();
+  // Verificamos el estado de la vinculación solo si NO estamos en página pública
+  if (!isPublicPage) {
+    checkGoogleCalendarStatus();
+  }
 
   const btnRecalcularTemp = document.getElementById("btnRecalcularTemp");
   if (btnRecalcularTemp) {
@@ -612,4 +637,72 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (btnInstalar) btnInstalar.addEventListener('click', handleInstallClick);
   if (btnInstalarMobile) btnInstalarMobile.addEventListener('click', handleInstallClick);
+
+  // ========== ELIMINAR CUENTA ==========
+  const btnEliminarCuenta = document.getElementById('btnEliminarCuenta');
+  const btnEliminarCuentaMobile = document.getElementById('btnEliminarCuentaMobile');
+  const modalEliminarCuenta = document.getElementById('modalEliminarCuenta');
+  const inputConfirmar = document.getElementById('inputConfirmarEliminacion');
+  const btnConfirmarEliminar = document.getElementById('btnConfirmarEliminarCuenta');
+
+  if (modalEliminarCuenta && inputConfirmar && btnConfirmarEliminar) {
+    const modalInstance = new bootstrap.Modal(modalEliminarCuenta);
+
+    // Abrir modal desde desktop
+    if (btnEliminarCuenta) {
+      btnEliminarCuenta.addEventListener('click', (e) => {
+        e.preventDefault();
+        modalInstance.show();
+      });
+    }
+
+    // Abrir modal desde mobile
+    if (btnEliminarCuentaMobile) {
+      btnEliminarCuentaMobile.addEventListener('click', (e) => {
+        e.preventDefault();
+        modalInstance.show();
+      });
+    }
+
+    // Habilitar botón solo si escribe "ELIMINAR"
+    inputConfirmar.addEventListener('input', () => {
+      btnConfirmarEliminar.disabled = inputConfirmar.value.trim() !== 'ELIMINAR';
+    });
+
+    // Limpiar input al cerrar modal
+    modalEliminarCuenta.addEventListener('hidden.bs.modal', () => {
+      inputConfirmar.value = '';
+      btnConfirmarEliminar.disabled = true;
+      btnConfirmarEliminar.innerHTML = '<i class="bi bi-trash me-1"></i>Eliminar Cuenta';
+    });
+
+    // Procesar eliminación
+    btnConfirmarEliminar.addEventListener('click', async () => {
+      btnConfirmarEliminar.disabled = true;
+      btnConfirmarEliminar.innerHTML = `
+        <span class="spinner-border spinner-border-sm me-1"></span>
+        Eliminando cuenta...
+      `;
+
+
+      try {
+        const result = await eliminarCuenta();
+
+        // Cerrar modal
+        modalInstance.hide();
+
+        // Mostrar mensaje de despedida
+        mostrarToast('👋 Cuenta eliminada. ¡Hasta pronto!', 'info');
+
+        // Redirigir a home después de 2 segundos (sin llamar logout, el usuario ya no existe)
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 2000);
+      } catch (error) {
+        mostrarToast(`❌ ${error.message}`, 'danger');
+        btnConfirmarEliminar.disabled = false;
+        btnConfirmarEliminar.innerHTML = '<i class="bi bi-trash me-1"></i>Eliminar Cuenta';
+      }
+    });
+  }
 });

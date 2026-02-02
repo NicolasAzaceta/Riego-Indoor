@@ -4,19 +4,49 @@ from django.http import JsonResponse
 from django.contrib.auth import login
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
-from datetime import datetime
 from rest_framework.response import Response
+from django.conf import settings
+from django_ratelimit.decorators import ratelimit
+from django.utils.decorators import method_decorator
+from datetime import datetime
 from .services.google_calendar import get_oauth_flow
 from .models import Profile
 from django.contrib.auth.models import User
 
+@method_decorator(ratelimit(key='ip', rate='10/h', method='POST'), name='post')
 class CustomTokenObtainPairView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
-        # Revertimos al comportamiento original:
-        # Esta vista solo valida credenciales y devuelve tokens JWT.
+        # Obtener tokens del serializador estándar
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        return Response(serializer.validated_data)
+        tokens = serializer.validated_data
+        
+        # Crear respuesta sin tokens en el body
+        response = Response({
+            'detail': 'Login exitoso',
+            'username': request.data.get('username')
+        })
+        
+        # Configurar cookies httpOnly con los tokens
+        response.set_cookie(
+            key='access_token',
+            value=tokens['access'],
+            max_age=3600,  # 1 hora (igual que ACCESS_TOKEN_LIFETIME)
+            httponly=True,
+            secure=not settings.DEBUG,  # True en producción (HTTPS)
+            samesite='Lax'
+        )
+        
+        response.set_cookie(
+            key='refresh_token',
+            value=tokens['refresh'],
+            max_age=7*24*3600,  # 7 días (igual que REFRESH_TOKEN_LIFETIME)
+            httponly=True,
+            secure=not settings.DEBUG,
+            samesite='Lax'
+        )
+        
+        return response
 
 
 def google_calendar_auth(request):

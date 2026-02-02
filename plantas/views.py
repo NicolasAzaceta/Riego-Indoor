@@ -568,3 +568,85 @@ class RiegoViewSet(viewsets.ReadOnlyModelViewSet):
         return queryset
 
 
+# ========== ELIMINAR CUENTA ==========
+from rest_framework.decorators import api_view, permission_classes
+from django.db import transaction
+from notificaciones.services.google_calendar import delete_calendar_event
+from notificaciones.models import Profile as NotificationProfile
+import traceback
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@transaction.atomic
+def delete_account(request):
+    """
+    Elimina permanentemente la cuenta del usuario y todos sus datos.
+    
+    Orden de eliminación:
+    1. Desvincular Google Calendar (si está vinculado) - borrar eventos
+    2. Eliminar plantas (cascade: registros de riego)
+    3. Eliminar configuraciones
+    4. Eliminar perfil de notificaciones
+    5. Eliminar usuario
+    """
+    user = request.user
+    username = user.username  # Guardar antes de eliminar
+    
+    try:
+        print(f"[DELETE ACCOUNT] Iniciando eliminación de cuenta: {username}")
+        
+        # 1. Verificar si tiene Google Calendar vinculado y borrar eventos
+        try:
+            profile = NotificationProfile.objects.get(user=user)
+            print(f"[DELETE ACCOUNT] Profile encontrado")
+            if profile.google_access_token:
+                print(f"[DELETE ACCOUNT] Eliminando eventos de Google Calendar")
+                # Borrar todos los eventos de Google Calendar antes de eliminar
+                plantas_con_evento = Planta.objects.filter(
+                    usuario=user, 
+                    google_calendar_event_id__isnull=False
+                )
+                
+                for planta in plantas_con_evento:
+                    try:
+                        delete_calendar_event(user, planta.google_calendar_event_id)
+                        print(f"[DELETE ACCOUNT] Evento {planta.google_calendar_event_id} eliminado")
+                    except Exception as e:
+                        # Si falla el borrado de un evento, continuamos
+                        print(f"[DELETE ACCOUNT] Error al borrar evento {planta.google_calendar_event_id}: {e}")
+        except NotificationProfile.DoesNotExist:
+            print(f"[DELETE ACCOUNT] No tiene perfil de notificaciones")
+            pass
+        
+        print(f"[DELETE ACCOUNT] Eliminando plantas...")
+        # 2. Eliminar plantas (los registros se eliminan en cascada por ForeignKey)
+        Planta.objects.filter(usuario=user).delete()
+        
+        print(f"[DELETE ACCOUNT] Eliminando configuración...")
+        # 3. Eliminar configuración de usuario
+        ConfiguracionUsuario.objects.filter(user=user).delete()
+        
+        print(f"[DELETE ACCOUNT] Eliminando localidad outdoor...")
+        # 4. Eliminar localidad outdoor
+        LocalidadUsuario.objects.filter(user=user).delete()
+        
+        print(f"[DELETE ACCOUNT] Eliminando perfil de notificaciones...")
+        # 5. Eliminar perfil de notificaciones
+        NotificationProfile.objects.filter(user=user).delete()
+        
+        print(f"[DELETE ACCOUNT] Eliminando usuario...")
+        # 6. Finalmente, eliminar el usuario
+        user.delete()
+        
+        print(f"[DELETE ACCOUNT] Usuario {username} eliminado exitosamente")
+        return Response({
+            'message': f'Cuenta de {username} eliminada exitosamente'
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        # Si algo falla, la transacción se revierte automáticamente
+        error_detail = traceback.format_exc()
+        print(f"[DELETE ACCOUNT] ERROR: {error_detail}")
+        return Response({
+            'detail': f'Error al eliminar cuenta: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

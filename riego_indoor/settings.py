@@ -6,7 +6,8 @@ import dj_database_url
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "plantas.authentication.JWTCookieAuthentication",  # Primero cookies
+        "rest_framework_simplejwt.authentication.JWTAuthentication",  # Fallback
     ),
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
@@ -16,6 +17,9 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": True,
 }
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -62,6 +66,7 @@ INSTALLED_APPS = [
     # Apps de terceros
     'rest_framework',
     'corsheaders',
+    'rest_framework_simplejwt.token_blacklist',
 ]
 
 MIDDLEWARE = [
@@ -79,6 +84,7 @@ MIDDLEWARE = [
 # Configuración de CORS
 if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
+    CORS_ALLOW_CREDENTIALS = True  # Necesario para cookies httpOnly
     # En desarrollo, confiamos en los orígenes locales para CSRF
     CSRF_TRUSTED_ORIGINS = [
         "http://localhost:8000",
@@ -90,6 +96,7 @@ else:
         "https://riegum.com",
         "https://www.riegum.com",
     ]
+    CORS_ALLOW_CREDENTIALS = True  # Necesario para cookies httpOnly
     if RENDER_EXTERNAL_HOSTNAME:
         CORS_ALLOWED_ORIGINS.append(f"https://{RENDER_EXTERNAL_HOSTNAME}")
     # En producción, los orígenes de CSRF son los mismos que los de CORS
