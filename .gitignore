@@ -38,3 +38,6 @@ credentials/*.json
 notificaciones/services/*.json
 
 *.pyc
+
+# Historial de cambios
+Historial/

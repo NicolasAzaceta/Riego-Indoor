@@ -117,6 +117,14 @@
                 <i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión
               </a>
             </li>
+            <li>
+              <hr class="dropdown-divider">
+            </li>
+            <li class="li-animado">
+              <a class="dropdown-item" id="btnEliminarCuenta" href="javascript:void(0);">
+                <i class="bi bi-trash me-2"></i>Eliminar Cuenta
+              </a>
+            </li>
           </ul>
         </div>
       </div>
@@ -183,6 +191,11 @@
             <!-- Botón de cerrar sesión -->
             <a class="btn btn-rojo-outline" id="btnLogoutMobile" href="javascript:void(0);">
               <i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión
+            </a>
+
+            <!-- Botón de eliminar cuenta -->
+            <a class="btn btn-danger" id="btnEliminarCuentaMobile" href="javascript:void(0);">
+              <i class="bi bi-trash me-2"></i>Eliminar Cuenta
             </a>
           </div>
         </div>
@@ -305,6 +318,41 @@
           <div class="modal-footer justify-content-end">
             <button type="button" class="btn btn-violeta-outline" data-bs-dismiss="modal">Cancelar</button>
             <button type="button" class="btn btn-rojo-outline" id="btnConfirmarDesvincular">Desvincular</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de confirmación para eliminar cuenta -->
+    <div class="modal fade" id="modalEliminarCuenta" tabindex="-1" aria-labelledby="modalEliminarCuentaLabel"
+      aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title w-100 text-center" id="modalEliminarCuentaLabel">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>Eliminar Cuenta Permanentemente
+            </h5>
+          </div>
+          <div class="modal-body">
+            <div class="alert alert-danger mb-3">
+              <strong>¡ATENCIÓN!</strong> Esta acción NO se puede deshacer.
+            </div>
+            <p><strong>Se eliminarán permanentemente:</strong></p>
+            <ul class="mb-3">
+              <li>Todas tus plantas</li>
+              <li>Todos los registros de riego</li>
+              <li>Tu configuración (indoor/outdoor)</li>
+              <li>Eventos de Google Calendar (si está vinculado)</li>
+            </ul>
+            <hr>
+            <p class="mb-2">Para confirmar, escribí <strong class="text-danger">ELIMINAR</strong> en el campo:</p>
+            <input type="text" id="inputConfirmarEliminacion" class="form-control" placeholder="Escribí ELIMINAR">
+          </div>
+          <div class="modal-footer justify-content-end">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" id="btnConfirmarEliminarCuenta" class="btn btn-danger" disabled>
+              <i class="bi bi-trash me-1"></i>Eliminar Cuenta
+            </button>
           </div>
         </div>
       </div>

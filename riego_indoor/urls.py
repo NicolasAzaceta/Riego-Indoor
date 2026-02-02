@@ -1,9 +1,9 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
-from rest_framework_simplejwt.views import TokenRefreshView
+from plantas.auth_views import CookieTokenRefreshView, LogoutView
 from notificaciones.views import CustomTokenObtainPairView
-from plantas.views import GoogleCalendarStatusView, GoogleCalendarDisconnectView
+from plantas.views import GoogleCalendarStatusView, GoogleCalendarDisconnectView, delete_account
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -39,7 +39,9 @@ urlpatterns = [
     # --- Rutas de Notificaciones y Google Calendar ---
     path('google-calendar/', include('notificaciones.urls')),
     path('api/auth/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/auth/token/refresh/', CookieTokenRefreshView.as_view(), name='token_refresh'),
+    path('api/auth/logout/', LogoutView.as_view(), name='logout'),
+    path('api/auth/delete-account/', delete_account, name='delete_account'),
     path('api/google-calendar-status/', GoogleCalendarStatusView.as_view(), name='google-calendar-status'),
     path('api/google-calendar-disconnect/', GoogleCalendarDisconnectView.as_view(), name='google-calendar-disconnect'),
     
