@@ -74,9 +74,10 @@ function renderizarDetalle(planta) {
       item.innerHTML = `
         <div class="position-relative">
           <img src="${imagen.imagen_url}" class="d-block w-100" alt="Imagen de ${planta.nombre_personalizado}" style="max-height: 400px; object-fit: contain;">
-          <button class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2" 
-                  onclick="eliminarImagen(${imagen.id})" 
-                  title="Eliminar imagen">
+          <button class="btn btn-danger btn-sm position-absolute" 
+                  onclick="event.stopPropagation(); eliminarImagen(${imagen.id});" 
+                  title="Eliminar imagen"
+                  style="top: 10px; right: 10px; z-index: 1050;">
             <i class="bi bi-trash"></i>
           </button>
           <div class="position-absolute bottom-0 start-0 w-100 text-center" style="background: linear-gradient(transparent, rgba(0,0,0,0.7)); padding: 8px 0;">
