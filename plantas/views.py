@@ -444,13 +444,15 @@ class PlantaViewSet(viewsets.ModelViewSet):
             # Inicializar servicio de storage
             storage_service = PlantImageStorageService()
             
-            # Subir imagen a GCS
-            public_url, blob_name = storage_service.upload_image(imagen_file, planta.id)
+            # Subir imagen a GCS (retorna signed URL y blob name)
+            signed_url, blob_name = storage_service.upload_image(imagen_file, planta.id)
             
             # Crear registro en base de datos
+            # NOTA: No guardamos la signed_url en la BD porque es muy larga (>500 chars) y expira.
+            # El serializer se encarga de generarla dinámicamente usando gcs_blob_name.
             imagen_planta = ImagenPlanta.objects.create(
                 planta=planta,
-                imagen_url=public_url,
+                imagen_url="",  # Dejamos vacío o URL dummy, ya que se regenera al vuelo
                 gcs_blob_name=blob_name
             )
             
