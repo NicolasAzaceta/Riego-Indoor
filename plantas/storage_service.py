@@ -128,9 +128,11 @@ class PlantImageStorageService:
         # Procesar imagen
         processed_image, image_format = self._process_image(file)
         
-        # Generar nombre único para el blob
+        # Generar nombre basado en timestamp para mejor tracking
+        from datetime import datetime
         extension = 'jpg' if image_format == 'JPEG' else image_format.lower()
-        filename = f"{uuid.uuid4()}.{extension}"
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')  # Ejemplo: 20260209_162135
+        filename = f"{timestamp}.{extension}"
         blob_name = f"plantas/{plant_id}/{filename}"
         
         # Subir a GCS
