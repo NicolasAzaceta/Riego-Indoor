@@ -88,11 +88,32 @@ class RiegoSerializer(serializers.ModelSerializer):
 
 # -------- Imagen de Planta --------
 class ImagenPlantaSerializer(serializers.ModelSerializer):
-    """Serializer para im\u00e1genes de plantas en GCS"""
+    """
+    Serializer para imágenes de plantas almacenadas en GCS.
+    Genera automáticamente Signed URLs frescas en cada request para bucket privado.
+    """
+    imagen_url = serializers.SerializerMethodField()
+    
     class Meta:
         model = ImagenPlanta
         fields = ('id', 'imagen_url', 'gcs_blob_name', 'fecha_subida', 'orden')
-        read_only_fields = ('id', 'imagen_url', 'gcs_blob_name', 'fecha_subida')
+        read_only_fields = ('id', 'gcs_blob_name', 'fecha_subida')
+    
+    def get_imagen_url(self, obj):
+        """
+        Genera una nueva Signed URL cada vez que se serializa la imagen.
+        Esto asegura que las URLs siempre estén válidas.
+        """
+        try:
+            from plantas.storage_service import PlantImageStorageService
+            storage_service = PlantImageStorageService()
+            return storage_service.generate_signed_url(obj.gcs_blob_name, expiration_days=7)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error al generar signed URL para {obj.gcs_blob_name}: {e}")
+            # Retornar None si falla (la imagen se mostrará como rota en frontend)
+            return None
 
 
 # -------- Planta --------

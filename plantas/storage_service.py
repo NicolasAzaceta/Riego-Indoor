@@ -108,68 +108,117 @@ class PlantImageStorageService:
     
     def upload_image(self, file, plant_id):
         """
-        Sube una imagen a GCS y retorna la URL pública.
+        Sube una imagen a GCS y retorna una Signed URL para acceso privado.
         
         Args:
-            file: Archivo UploadedFile de Django
-            plant_id: ID de la planta asociada
+            file: UploadedFile de Django
+            plant_id: ID de la planta
             
         Returns:
-            tuple: (public_url, blob_name)
+            tuple: (signed_url, blob_name)
             
         Raises:
-            ValueError: Si la validación falla
-            Exception: Si ocurre un error en el upload
+            ValueError: Si el archivo no es válido
         """
+        from datetime import timedelta
+        
         # Validar archivo
         self._validate_file(file)
         
         # Procesar imagen
         processed_image, image_format = self._process_image(file)
         
-        # Generar nombre único
-        file_extension = image_format.lower()
-        if file_extension == 'jpeg':
-            file_extension = 'jpg'
-        
-        unique_filename = f"{uuid.uuid4()}.{file_extension}"
-        blob_name = f"plantas/{plant_id}/{unique_filename}"
+        # Generar nombre único para el blob
+        extension = 'jpg' if image_format == 'JPEG' else image_format.lower()
+        filename = f"{uuid.uuid4()}.{extension}"
+        blob_name = f"plantas/{plant_id}/{filename}"
         
         # Subir a GCS
         try:
             blob = self.bucket.blob(blob_name)
             blob.upload_from_file(
                 processed_image,
-                content_type=f"image/{file_extension}",
-                timeout=30
+                content_type=f'image/{extension}',
+                timeout=60  # 60 segundos de timeout
             )
             
-            # Obtener URL pública
-            public_url = blob.public_url
+            logger.info(f"Imagen subida a GCS: {blob_name}")
             
-            logger.info(f"Imagen subida exitosamente a GCS: {blob_name}")
-            return public_url, blob_name
+            # Generar Signed URL válida por 7 días
+            signed_url = blob.generate_signed_url(
+                version="v4",
+                expiration=timedelta(days=7),
+                method="GET"
+            )
             
+            logger.info(f"Signed URL generada válida por 7 días")
+            
+            return signed_url, blob_name
+                
         except Exception as e:
             logger.error(f"Error al subir imagen a GCS: {e}")
             raise Exception(f"Error al subir imagen: {str(e)}")
     
-    def delete_image(self, blob_name):
+    def generate_signed_url(self, blob_name, expiration_days=7):
         """
-        Elimina una imagen de GCS.
+        Genera una nueva Signed URL para un blob existente.
+        Útil para regenerar URLs que han expirado.
         
         Args:
-            blob_name: Nombre del blob en GCS
+            blob_name: Nombre del blob en GCS (ej: "plantas/1/uuid.jpg")
+            expiration_days: Días hasta que expire la URL (default: 7)
             
         Returns:
-            bool: True si se eliminó exitosamente, False si ocurrió un error
+            str: Signed URL válida
+            
+        Raises:
+            Exception: Si el blob no existe o hay error al generar URL
+        """
+        from datetime import timedelta
+        
+        try:
+            blob = self.bucket.blob(blob_name)
+            
+            # Verificar que el blob existe
+            if not blob.exists():
+                raise Exception(f"El blob {blob_name} no existe en GCS")
+            
+            # Generar signed URL
+            signed_url = blob.generate_signed_url(
+                version="v4",
+                expiration=timedelta(days=expiration_days),
+                method="GET"
+            )
+            
+            logger.info(f"Signed URL regenerada para {blob_name}, válida por {expiration_days} días")
+            return signed_url
+            
+        except Exception as e:
+            logger.error(f"Error al generar signed URL para {blob_name}: {e}")
+            raise
+    
+    def delete_image(self, blob_name):
+        """
+        Elimina una imagen de Google Cloud Storage.
+        
+        Args:
+            blob_name: Nombre del blob a eliminar (ej: "plantas/1/uuid.jpg")
+            
+        Returns:
+            bool: True si se eliminó exitosamente
+            
+        Raises:
+            Exception: Si ocurre un error al eliminar
         """
         try:
             blob = self.bucket.blob(blob_name)
+            
+            # Eliminar el blob
             blob.delete()
+            
             logger.info(f"Imagen eliminada de GCS: {blob_name}")
             return True
+            
         except Exception as e:
-            logger.warning(f"Error al eliminar imagen {blob_name} de GCS: {e}")
-            # No lanzamos excepción porque la imagen podría ya no existir
-            return False
+            logger.error(f"Error al eliminar imagen de GCS: {blob_name} - {e}")
+            raise
