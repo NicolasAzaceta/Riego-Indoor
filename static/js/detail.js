@@ -60,6 +60,17 @@ function renderizarDetalle(planta) {
     planta.imagenes.forEach((imagen, index) => {
       const item = document.createElement('div');
       item.className = `carousel-item ${index === 0 ? 'active' : ''}`;
+
+      // Formatear fecha de subida
+      const fechaSubida = new Date(imagen.fecha_subida);
+      const fechaFormateada = fechaSubida.toLocaleString('es-AR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
       item.innerHTML = `
         <div class="position-relative">
           <img src="${imagen.imagen_url}" class="d-block w-100" alt="Imagen de ${planta.nombre_personalizado}" style="max-height: 400px; object-fit: contain;">
@@ -68,6 +79,9 @@ function renderizarDetalle(planta) {
                   title="Eliminar imagen">
             <i class="bi bi-trash"></i>
           </button>
+          <div class="position-absolute bottom-0 start-0 w-100 text-center" style="background: linear-gradient(transparent, rgba(0,0,0,0.7)); padding: 8px 0;">
+            <small class="text-white fw-bold">📅 ${fechaFormateada}</small>
+          </div>
         </div>
       `;
       carouselInner.appendChild(item);
