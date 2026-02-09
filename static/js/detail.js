@@ -55,11 +55,21 @@ function renderizarDetalle(planta) {
   // --- Galería de Fotos ---
   const carouselInner = document.querySelector('#plant-carousel .carousel-inner');
   carouselInner.innerHTML = ''; // Limpiamos el carrusel
+
   if (planta.imagenes && planta.imagenes.length > 0) {
-    planta.imagenes.forEach((imgUrl, index) => {
+    planta.imagenes.forEach((imagen, index) => {
       const item = document.createElement('div');
       item.className = `carousel-item ${index === 0 ? 'active' : ''}`;
-      item.innerHTML = `<img src="${imgUrl}" class="d-block w-100" alt="Imagen de la planta ${index + 1}">`;
+      item.innerHTML = `
+        <div class="position-relative">
+          <img src="${imagen.imagen_url}" class="d-block w-100" alt="Imagen de ${planta.nombre_personalizado}" style="max-height: 400px; object-fit: contain;">
+          <button class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2" 
+                  onclick="eliminarImagen(${imagen.id})" 
+                  title="Eliminar imagen">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      `;
       carouselInner.appendChild(item);
     });
   } else {
@@ -362,32 +372,80 @@ function setupImageUpload() {
   uploadArea.addEventListener('drop', e => handleFiles(e.dataTransfer.files), false);
   fileInput.addEventListener('change', e => handleFiles(e.target.files));
 
-  function handleFiles(files) {
+  async function handleFiles(files) {
     if (files.length === 0) return;
 
+    const plantId = getPlantIdFromURL();
+    const file = files[0]; // Por ahora procesamos una imagen a la vez
+
+    // Validación del cliente
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+
+    if (!allowedTypes.includes(file.type)) {
+      mostrarToast('❌ Formato no válido. Use JPG, PNG o WEBP.', 'danger');
+      return;
+    }
+
+    if (file.size > maxSize) {
+      mostrarToast('❌ La imagen no puede superar 5MB.', 'danger');
+      return;
+    }
+
+    // Mostrar barra de progreso
     uploadProgressContainer.classList.remove('d-none');
     progressBar.style.width = '0%';
     progressBar.setAttribute('aria-valuenow', 0);
     progressBar.textContent = '0%';
 
-    // Lógica de subida real a GCS (simulada por ahora)
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 10;
-      if (progress > 100) progress = 100;
-      progressBar.style.width = `${progress}%`;
-      progressBar.setAttribute('aria-valuenow', progress);
-      progressBar.textContent = `${progress}%`;
+    try {
+      // Crear FormData
+      const formData = new FormData();
+      formData.append('image', file);
 
-      if (progress === 100) {
-        clearInterval(interval);
-        mostrarToast(`✅ ${files.length} imagen(es) subida(s) (simulado).`, 'success');
-        setTimeout(() => {
-          uploadProgressContainer.classList.add('d-none');
-          cargarDatosPagina(getPlantIdFromURL()); // Recargamos los datos para ver la nueva foto
-        }, 1000);
+      // Simular progreso mientras se sube
+      let simulatedProgress = 0;
+      const progressInterval = setInterval(() => {
+        if (simulatedProgress < 90) {
+          simulatedProgress += 10;
+          progressBar.style.width = `${simulatedProgress}%`;
+          progressBar.setAttribute('aria-valuenow', simulatedProgress);
+          progressBar.textContent = `${simulatedProgress}%`;
+        }
+      }, 150);
+
+      // Hacer el POST a la API
+      const response = await fetchProtegido(`/api/plantas/${plantId}/imagenes/`, {
+        method: 'POST',
+        body: formData, // NO establecer Content-Type (el navegador lo hace automáticamente con boundary)
+      });
+
+      clearInterval(progressInterval);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al subir la imagen');
       }
-    }, 100);
+
+      // Completar barra de progreso
+      progressBar.style.width = '100%';
+      progressBar.setAttribute('aria-valuenow', 100);
+      progressBar.textContent = '100%';
+
+      mostrarToast('✅ Imagen subida correctamente!', 'success');
+
+      // Recargar datos para mostrar la nueva imagen
+      setTimeout(() => {
+        uploadProgressContainer.classList.add('d-none');
+        fileInput.value = ''; // Limpiar input
+        cargarDatosPagina(plantId);
+      }, 1000);
+
+    } catch (error) {
+      console.error('Error al subir imagen:', error);
+      uploadProgressContainer.classList.add('d-none');
+      mostrarToast(`❌ ${error.message}`, 'danger');
+    }
   }
 }
 

@@ -16,6 +16,10 @@ whitenoise~=6.6
 google-api-python-client~=2.131
 google-auth-oauthlib~=1.2
 google-auth-httplib2~=0.2
+google-cloud-storage~=2.14.0  # Para almacenamiento de imágenes
+
+# Monitoring y Logging
+sentry-sdk~=1.40
 
 # Utilidades
 requests~=2.31
@@ -24,3 +28,5 @@ pytz~=2023.3
 django-cors-headers~=4.3
 APScheduler==3.10.4
 django-ratelimit~=4.1
+pillow~=10.2.0  # Para procesamiento de imágenes
+

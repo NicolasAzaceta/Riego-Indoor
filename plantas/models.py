@@ -5,6 +5,105 @@ from django.utils import timezone
 from datetime import timedelta, date
 
 
+class AuditLog(models.Model):
+    """
+    Registro de auditoría para acciones críticas de usuario.
+    Permite trazabilidad completa de operaciones importantes en el sistema.
+    """
+    ACTION_CHOICES = [
+        ('LOGIN', 'Inicio de sesión'),
+        ('LOGOUT', 'Cierre de sesión'),
+        ('REGISTER', 'Registro de usuario'),
+        ('DELETE_ACCOUNT', 'Eliminación de cuenta'),
+        ('CALENDAR_LINK', 'Vinculación de Google Calendar'),
+        ('CALENDAR_UNLINK', 'Desvinculación de Google Calendar'),
+        ('PLANT_CREATE', 'Creación de planta'),
+        ('PLANT_DELETE', 'Eliminación de planta'),
+        ('CONFIG_UPDATE', 'Actualización de configuración'),
+        ('PASSWORD_CHANGE', 'Cambio de contraseña'),
+    ]
+    
+    user = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='audit_logs',
+        help_text="Usuario que realizó la acción (null si fue eliminado)"
+    )
+    username = models.CharField(
+        max_length=150,
+        help_text="Nombre de usuario (guardado por si el usuario se elimina)"
+    )
+    action = models.CharField(
+        max_length=50, 
+        choices=ACTION_CHOICES,
+        db_index=True,
+        help_text="Tipo de acción realizada"
+    )
+    timestamp = models.DateTimeField(
+        auto_now_add=True,
+        db_index=True,
+        help_text="Momento en que ocurrió la acción"
+    )
+    ip_address = models.GenericIPAddressField(
+        null=True, 
+        blank=True,
+        help_text="Dirección IP desde donde se realizó la acción"
+    )
+    user_agent = models.TextField(
+        blank=True,
+        help_text="User-Agent del navegador"
+    )
+    details = models.JSONField(
+        null=True, 
+        blank=True,
+        help_text="Detalles adicionales de la acción en formato JSON"
+    )
+    
+    class Meta:
+        ordering = ['-timestamp']
+        verbose_name = "Registro de Auditoría"
+        verbose_name_plural = "Registros de Auditoría"
+        indexes = [
+            models.Index(fields=['user', '-timestamp']),
+            models.Index(fields=['action', '-timestamp']),
+        ]
+    
+    def __str__(self):
+        return f"{self.username} - {self.get_action_display()} - {self.timestamp.strftime('%Y-%m-%d %H:%M')}"
+    
+    @classmethod
+    def log(cls, user, action, request=None, details=None):
+        """
+        Helper method to create audit log entries easily.
+        
+        Args:
+            user: User instance or None
+            action: One of the ACTION_CHOICES keys
+            request: Django request object (optional, for IP and User-Agent)
+            details: Dict with additional information (optional)
+        
+        Returns:
+            Created AuditLog instance
+        """
+        from plantas.utils.logging_helpers import get_client_ip, get_user_agent
+        
+        log_entry = cls(
+            user=user,
+            username=user.username if user else 'anonymous',
+            action=action,
+            details=details
+        )
+        
+        if request:
+            log_entry.ip_address = get_client_ip(request)
+            log_entry.user_agent = get_user_agent(request)
+        
+        log_entry.save()
+        return log_entry
+
+
 class ConfiguracionUsuario(models.Model):
     """
     Configuración de ambiente indoor del usuario.
@@ -249,3 +348,45 @@ class Riego(models.Model):
 
     def __str__(self):
         return f"Riego {self.planta.nombre_personalizado} - {self.fecha}"
+
+
+class ImagenPlanta(models.Model):
+    """
+    Modelo para almacenar imágenes de plantas en Google Cloud Storage.
+    Permite a los usuarios subir múltiples fotos de cada planta.
+    """
+    planta = models.ForeignKey(
+        Planta,
+        on_delete=models.CASCADE,
+        related_name='imagenes',
+        help_text="Planta a la que pertenece esta imagen"
+    )
+    imagen_url = models.URLField(
+        max_length=500,
+        help_text="URL pública de la imagen en Google Cloud Storage"
+    )
+    gcs_blob_name = models.CharField(
+        max_length=255,
+        help_text="Nombre del blob en GCS (para eliminación)",
+        db_index=True
+    )
+    fecha_subida = models.DateTimeField(
+        auto_now_add=True,
+        help_text="Fecha y hora de subida de la imagen"
+    )
+    orden = models.IntegerField(
+        default=0,
+        help_text="Orden de visualización en la galería"
+    )
+    
+    class Meta:
+        ordering = ['orden', '-fecha_subida']
+        verbose_name = "Imagen de Planta"
+        verbose_name_plural = "Imágenes de Plantas"
+        indexes = [
+            models.Index(fields=['planta', 'orden']),
+            models.Index(fields=['planta', '-fecha_subida']),
+        ]
+    
+    def __str__(self):
+        return f"Imagen {self.id} de {self.planta.nombre_personalizado}"

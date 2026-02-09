@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.shortcuts import redirect
 from django.http import JsonResponse
 from django.contrib.auth import login
+import logging
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework.response import Response
@@ -12,6 +13,10 @@ from datetime import datetime
 from .services.google_calendar import get_oauth_flow
 from .models import Profile
 from django.contrib.auth.models import User
+from plantas.models import AuditLog
+
+# Logger para este módulo
+logger = logging.getLogger(__name__)
 
 @method_decorator(ratelimit(key='ip', rate='10/h', method='POST'), name='post')
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -46,6 +51,14 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             samesite='Lax'
         )
         
+        # Registrar auditoría de login
+        try:
+            user = User.objects.get(username=request.data.get('username'))
+            AuditLog.log(user, 'LOGIN', request)
+            logger.info(f"Login exitoso: {user.username}")
+        except User.DoesNotExist:
+            logger.warning(f"Intento de login con usuario inexistente: {request.data.get('username')}")
+        
         return response
 
 
@@ -64,8 +77,7 @@ def google_calendar_auth(request):
         user = User.objects.get(id=user_id)
         login(request, user) # Iniciamos una sesión de Django para este usuario
     except Exception as e:
-        print(f"DEBUG AUTH ERROR: {str(e)}")
-        print(f"DEBUG TOKEN: {jwt_token}")
+        logger.error(f"Error en autenticación de Google Calendar: {str(e)}")
         return JsonResponse({'error': f'Token inválido o expirado: {str(e)}'}, status=401)
 
     flow = get_oauth_flow()
@@ -94,17 +106,21 @@ def google_calendar_callback(request):
     profile.google_token_expiry = credentials.expiry
     profile.save()
     
+    # Registrar auditoría
+    AuditLog.log(request.user, 'CALENDAR_LINK', request)
+    logger.info(f"Google Calendar vinculado para usuario: {request.user.username}")
+    
     # --- NUEVO: Rellenar eventos faltantes en background ---
     import threading
     from .services.google_calendar import populate_missing_events
     
     def run_population(user_inst):
         try:
-            print(f"Iniciando población de eventos para {user_inst.username}...")
+            logger.info(f"Iniciando población de eventos de calendar para {user_inst.username}")
             count, errs = populate_missing_events(user_inst)
-            print(f"Población finalizada: {count} eventos creados, {len(errs)} errores.")
+            logger.info(f"Población finalizada para {user_inst.username}: {count} eventos creados, {len(errs)} errores")
         except Exception as e:
-            print(f"Error en thread de población: {e}")
+            logger.error(f"Error en población de eventos para {user_inst.username}: {e}")
 
     t = threading.Thread(target=run_population, args=(request.user,))
     t.daemon = True

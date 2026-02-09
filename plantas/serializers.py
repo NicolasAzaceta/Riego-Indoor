@@ -1,7 +1,33 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from rest_framework.validators import UniqueValidator
-from .models import Planta, Riego, ConfiguracionUsuario, LocalidadUsuario
+from .models import Planta, Riego, ConfiguracionUsuario, LocalidadUsuario, AuditLog, ImagenPlanta
+
+
+# -------- Auditoría --------
+class AuditLogSerializer(serializers.ModelSerializer):
+    """Serializer para logs de auditoría"""
+    user_info = serializers.SerializerMethodField()
+    action_display = serializers.CharField(source='get_action_display', read_only=True)
+    
+    class Meta:
+        model = AuditLog
+        fields = (
+            'id', 'user', 'user_info', 'username', 'action', 'action_display',
+            'timestamp', 'ip_address', 'user_agent', 'details'
+        )
+        read_only_fields = fields  # Todos los campos son read-only
+    
+    def get_user_info(self, obj):
+        """Información básica del usuario si aún existe"""
+        if obj.user:
+            return {
+                'id': obj.user.id,
+                'username': obj.user.username,
+                'email': obj.user.email
+            }
+        return None
+
 
 # -------- Configuración Indoor --------
 class ConfiguracionUsuarioSerializer(serializers.ModelSerializer):
@@ -60,6 +86,15 @@ class RiegoSerializer(serializers.ModelSerializer):
         read_only_fields = ("fecha",)
 
 
+# -------- Imagen de Planta --------
+class ImagenPlantaSerializer(serializers.ModelSerializer):
+    """Serializer para im\u00e1genes de plantas en GCS"""
+    class Meta:
+        model = ImagenPlanta
+        fields = ('id', 'imagen_url', 'gcs_blob_name', 'fecha_subida', 'orden')
+        read_only_fields = ('id', 'imagen_url', 'gcs_blob_name', 'fecha_subida')
+
+
 # -------- Planta --------
 class PlantaSerializer(serializers.ModelSerializer):
     # Campos calculados (read-only) para que el front no haga cuentas
@@ -70,6 +105,7 @@ class PlantaSerializer(serializers.ModelSerializer):
     estado_riego = serializers.SerializerMethodField()
     estado_texto = serializers.SerializerMethodField()
     sugerencia_suplementos = serializers.SerializerMethodField()
+    imagenes = ImagenPlantaSerializer(many=True, read_only=True)
 
     class Meta:
         model = Planta
@@ -80,6 +116,8 @@ class PlantaSerializer(serializers.ModelSerializer):
             # calculados
             "recommended_water_ml", "frequency_days", "next_watering_date",
             "days_left", "estado_riego", "estado_texto", "sugerencia_suplementos",
+            # imágenes
+            "imagenes",
         )
         read_only_fields = ("usuario",)
 

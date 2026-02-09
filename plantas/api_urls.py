@@ -3,11 +3,13 @@ from rest_framework.routers import DefaultRouter
 from .views import (PlantaViewSet, RiegoViewSet, RegisterView, WeatherDataView, 
                     ConfiguracionUsuarioView, LocalidadUsuarioView, LocalidadClimaView, 
                     TriggerRecalculoOutdoorView)
+from .viewsets import AuditLogViewSet
 from notificaciones.api.views import UpdateCalendarTimeView
 
 router = DefaultRouter()
 router.register(r'plantas', PlantaViewSet, basename='plantas')
 router.register(r'riegos', RiegoViewSet, basename='riegos')
+router.register(r'audit-logs', AuditLogViewSet, basename='audit-logs')
 
 urlpatterns = [
     path('auth/register/', RegisterView.as_view(), name='api-register'),
