@@ -461,16 +461,18 @@ class PlantaViewSet(viewsets.ModelViewSet):
             
         except ValueError as e:
             # Errores de validación (tipo, tamaño, formato)
-            logger.warning(f"Error de validación al subir imagen: {e}")
+            logger.warning(f"Error de validación al subir imagen para planta {planta.id}: {e}")
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
         except Exception as e:
-            # Errores inesperados
-            logger.error(f"Error al subir imagen: {e}")
+            # Errores inesperados - registrar detalle completo
+            import traceback
+            logger.error(f"Error inesperado al subir imagen para planta {planta.id}: {e}")
+            logger.error(f"Traceback completo:\n{traceback.format_exc()}")
             return Response(
-                {'error': 'Error al procesar la imagen. Intente nuevamente.'},
+                {'error': f'Error al procesar la imagen: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
