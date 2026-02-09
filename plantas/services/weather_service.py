@@ -3,9 +3,13 @@ Servicio para interactuar con Google Weather API y gestionar registros climátic
 """
 
 import requests
+import logging
 from django.conf import settings
 from datetime import datetime, date
 from plantas.models import RegistroClima, LocalidadUsuario
+
+# Logger para este módulo
+logger = logging.getLogger(__name__)
 
 
 def obtener_clima_actual(latitud, longitud):
@@ -66,10 +70,10 @@ def obtener_clima_actual(latitud, longitud):
         }
     
     except requests.exceptions.RequestException as e:
-        print(f"Error al consultar Weather API: {e}")
+        logger.error(f"Error al consultar Weather API: {e}")
         return None
     except (KeyError, ValueError) as e:
-        print(f"Error al parsear respuesta de Weather API: {e}")
+        logger.error(f"Error al parsear respuesta de Weather API: {e}")
         return None
 
 

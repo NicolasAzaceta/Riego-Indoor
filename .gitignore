@@ -18,6 +18,8 @@ __pycache__/
 
 # Archivos de logs
 *.log
+logs/*.log
+logs/*.log.*
 
 # Carpeta de archivos estáticos de producción
 staticfiles/

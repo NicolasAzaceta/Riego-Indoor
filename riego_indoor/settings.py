@@ -189,8 +189,45 @@ USE_I18N = True
 
 USE_TZ = True
 
-# Ruta al archivo de credenciales de la cuenta de servicio
-GOOGLE_SERVICE_ACCOUNT_FILE = os.path.join(BASE_DIR, 'credentials', 'google_service_account.json')
+# =========================
+# Google Cloud Storage (GCS)
+# =========================
+
+GCS_BUCKET_NAME = config('GCS_BUCKET_NAME', default='riegum.com')
+
+# Configuración de credenciales según entorno
+if DEBUG:
+    # Desarrollo: usar archivo local
+    GOOGLE_SERVICE_ACCOUNT_FILE = os.path.join(BASE_DIR, 'credentials', 'google-service-account.json')
+else:
+    # Producción: leer JSON desde variable de entorno y crear archivo temporal
+    import json
+    import tempfile
+    
+    gcs_credentials_json = config('GCS_SERVICE_ACCOUNT_JSON', default=None)
+    
+    if gcs_credentials_json:
+        try:
+            # Crear archivo temporal para google-cloud-storage
+            gcs_cred_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json')
+            gcs_cred_file.write(gcs_credentials_json)
+            gcs_cred_file.close()
+            GOOGLE_SERVICE_ACCOUNT_FILE = gcs_cred_file.name
+            print(f"✅ GCS credentials loaded from environment variable")
+        except Exception as e:
+            print(f"❌ Error al cargar credenciales GCS: {e}")
+            GOOGLE_SERVICE_ACCOUNT_FILE = None
+    else:
+        print("⚠️ GCS_SERVICE_ACCOUNT_JSON no encontrada en producción")
+        GOOGLE_SERVICE_ACCOUNT_FILE = None
+
+# =========================
+# Media Files (Desarrollo)
+# =========================
+
+if DEBUG:
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = BASE_DIR / 'media'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
@@ -252,3 +289,92 @@ else:
         EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
         DEFAULT_FROM_EMAIL = 'noreply@riegum.com'
         SERVER_EMAIL = DEFAULT_FROM_EMAIL
+
+
+# --- Logging Configuration ---
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {asctime} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': BASE_DIR / 'logs' / 'riego_indoor.log',
+            'maxBytes': 1024 * 1024 * 10,  # 10MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+        },
+        'error_file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': BASE_DIR / 'logs' / 'error.log',
+            'maxBytes': 1024 * 1024 * 10,  # 10MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+            'level': 'ERROR',
+        },
+    },
+    'loggers': {
+        'plantas': {
+            'handlers': ['console', 'file', 'error_file'],
+            'level': 'INFO' if DEBUG else 'WARNING',
+            'propagate': False,
+        },
+        'notificaciones': {
+            'handlers': ['console', 'file', 'error_file'],
+            'level': 'INFO' if DEBUG else 'WARNING',
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['console', 'error_file'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
+    'root': {
+        'handlers': ['console', 'file'],
+        'level': 'INFO' if DEBUG else 'WARNING',
+    },
+}
+
+
+# --- Sentry Configuration (Error Monitoring) ---
+# Sentry se activa solo en producción y si se proporciona SENTRY_DSN
+if not DEBUG:
+    SENTRY_DSN = config('SENTRY_DSN', default=None)
+    if SENTRY_DSN:
+        import sentry_sdk
+        from sentry_sdk.integrations.django import DjangoIntegration
+        
+        sentry_sdk.init(
+            dsn=SENTRY_DSN,
+            integrations=[DjangoIntegration()],
+            
+            # Porcentaje de transacciones a trackear para performance monitoring
+            traces_sample_rate=0.1,  # 10% de requests
+            
+            # Enviar datos de performance
+            profiles_sample_rate=0.1,  # 10% de requests
+            
+            # Información de release para tracking de versiones
+            release=config('RENDER_GIT_COMMIT', default='unknown'),
+            
+            # Ambiente (producción)
+            environment='production',
+            
+            # Enviar information del usuario con cada error
+            send_default_pii=True,
+        )
+

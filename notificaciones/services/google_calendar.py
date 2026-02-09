@@ -1,6 +1,7 @@
 # --- Librerías Estándar ---
 import os
 import json
+import logging
 from datetime import datetime, timedelta
 
 # --- Librerías de Terceros ---
@@ -17,6 +18,9 @@ from googleapiclient.errors import HttpError # Importar HttpError
 # --- Componentes de Django ---
 from django.conf import settings
 from django.utils import timezone
+
+# Logger para este módulo
+logger = logging.getLogger(__name__)
 
 def _get_redirect_uri():
     """Devuelve la URI de redirección correcta para desarrollo o producción."""
@@ -55,7 +59,7 @@ def get_user_calendar_service(user):
     # --- LÓGICA CLAVE: Refrescar el token si es necesario ---
     # Verificamos si el token ha expirado o está a punto de expirar (ej. en los próximos 5 minutos)
     if creds.expired and creds.refresh_token:
-        print(f"Token de Google para '{user.username}' expirado. Refrescando...")
+        logger.info(f"Token de Google expirado para {user.username}, refrescando...")
         creds.refresh(google_requests.Request())
         # Guardamos los nuevos tokens en el perfil del usuario
         profile.google_access_token = creds.token
@@ -177,10 +181,10 @@ def delete_calendar_event(user, event_id):
         # Si el evento ya no existe (404) o fue borrado (410), consideramos que el borrado fue exitoso
         if e.resp.status in [404, 410]:
             return True
-        print(f"Error al borrar evento {event_id}: {e}")
+        logger.warning(f"Error HTTP al borrar evento {event_id}: {e}")
         return False
     except Exception as e:
-        print(f"Error genérico al borrar evento {event_id}: {e}")
+        logger.error(f"Error genérico al borrar evento {event_id}: {e}")
         return False
 
 
@@ -245,7 +249,7 @@ def create_riego_event(user, planta, fecha_riego, motivo=None):
         return event
     
     except Exception as e:
-        print(f"Error al crear evento de riego para {planta.nombre_personalizado}: {e}")
+        logger.error(f"Error al crear evento de riego para {planta.nombre_personalizado}: {e}")
         return None
 
 
@@ -311,7 +315,7 @@ def recalculate_all_future_events(user):
         except Exception as e:
             # Capturamos el mensaje de error para diagnóstico
             error_msg = f"Planta {planta.id}: {str(e)}"
-            print(f"Error recalculando evento: {error_msg}")
+            logger.warning(f"Error recalculando evento: {error_msg}")
             errores.append(error_msg)
             
     return count, errores
@@ -333,7 +337,7 @@ def populate_missing_events(user):
     count = 0
     errores = []
     
-    print(f"Buscando eventos faltantes para {user.username}... Encontradas {plantas_sin_evento.count()} plantas.")
+    logger.info(f"Buscando eventos faltantes para {user.username}... Encontradas {plantas_sin_evento.count()} plantas")
 
     for planta in plantas_sin_evento:
         try:
@@ -347,7 +351,7 @@ def populate_missing_events(user):
                 count += 1
         except Exception as e:
             msg = f"Error creando evento inicial para {planta.nombre_personalizado}: {e}"
-            print(msg)
+            logger.error(msg)
             errores.append(msg)
             
     return count, errores

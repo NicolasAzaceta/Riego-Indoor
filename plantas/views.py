@@ -4,21 +4,27 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.models import User
 
-from .models import Planta, Riego, ConfiguracionUsuario, LocalidadUsuario, RegistroClima
+from .models import Planta, Riego, ConfiguracionUsuario, LocalidadUsuario, RegistroClima, AuditLog, ImagenPlanta
 from .serializers import PlantaSerializer, RiegoSerializer, RegisterSerializer, ConfiguracionUsuarioSerializer, LocalidadUsuarioSerializer
 from .permissions import IsOwner
+from .storage_service import PlantImageStorageService
+from .serializers import ImagenPlantaSerializer
 from notificaciones.services.google_calendar import get_user_calendar_service
 
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
+import logging
 from django.contrib.auth.decorators import login_required
 from django.db.models import Avg, Sum, Count, Max, Min, Value
 from django.db.models.functions import Coalesce
 from django.contrib.auth import login, authenticate
 from django.conf import settings
 import requests
+
+# Logger para este módulo
+logger = logging.getLogger(__name__)
 
 
 def home(request):
@@ -56,6 +62,11 @@ class RegisterView(APIView):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
+        
+        # Registrar auditoría
+        AuditLog.log(user, 'REGISTER', request, details={'email': user.email})
+        logger.info(f"Nuevo usuario registrado: {user.username}")
+        
         return Response({"id": user.id, "username": user.username}, status=status.HTTP_201_CREATED)
 
 class ConfiguracionUsuarioView(APIView):
@@ -282,9 +293,9 @@ class GoogleCalendarDisconnectView(APIView):
                     borrado_exitoso = delete_calendar_event(user, planta.google_calendar_event_id)
                     
                     if borrado_exitoso:
-                        print(f"Evento '{planta.google_calendar_event_id}' de la planta '{planta.nombre_personalizado}' eliminado por desvinculación.")
+                        logger.info(f"Evento de Google Calendar eliminado: {planta.google_calendar_event_id} (planta: {planta.nombre_personalizado})")
                     else:
-                        print(f"No se pudo confirmar el borrado del evento '{planta.google_calendar_event_id}' de '{planta.nombre_personalizado}'.")
+                        logger.warning(f"No se pudo confirmar borrado del evento {planta.google_calendar_event_id} (planta: {planta.nombre_personalizado})")
 
                     # CRÍTICO: Siempre limpiamos el ID en la base de datos para no quedar desincronizados.
                     # Si el evento sigue en Google (por error), es mejor perder el link que tener un ID fantasma.
@@ -293,13 +304,18 @@ class GoogleCalendarDisconnectView(APIView):
 
             except Exception as e:
                 # Si falla la obtención del servicio (ej. token expirado), solo lo informamos y continuamos.
-                print(f"No se pudieron eliminar los eventos del calendario al desvincular (posiblemente el token ya no era válido): {e}")
+                logger.warning(f"No se pudieron eliminar eventos del calendario al desvincular: {e}")
 
         # 2. Borrar los tokens y la información de Google del perfil.
         profile.google_access_token = None
         profile.google_refresh_token = None
         profile.google_token_expiry = None
         profile.save()
+        
+        # Registrar auditoría
+        AuditLog.log(user, 'CALENDAR_UNLINK', request)
+        logger.info(f"Google Calendar desvinculado para usuario: {user.username}")
+        
         return Response({"message": "Calendario desvinculado con éxito. Los eventos asociados han sido eliminados."}, status=status.HTTP_200_OK)
 
 class WeatherDataView(APIView):
@@ -356,7 +372,36 @@ class PlantaViewSet(viewsets.ModelViewSet):
         return Planta.objects.filter(usuario=self.request.user).order_by("id")
 
     def perform_create(self, serializer):
-        serializer.save()  # el serializer setea usuario desde request
+        planta = serializer.save()  # el serializer setea usuario desde request
+        
+        # Registrar auditoría
+        AuditLog.log(
+            self.request.user, 
+            'PLANT_CREATE', 
+            self.request, 
+            details={
+                'plant_name': planta.nombre_personalizado,
+                'plant_type': planta.tipo_planta,
+                'cultivation_type': planta.tipo_cultivo
+            }
+        )
+        logger.info(f"Nueva planta creada: {planta.nombre_personalizado} por {self.request.user.username}")
+    
+    def perform_destroy(self, instance):
+        plant_name = instance.nombre_personalizado
+        user = self.request.user
+        
+        # Registrar auditoría ANTES de eliminar
+        AuditLog.log(
+            user, 
+            'PLANT_DELETE', 
+            self.request, 
+            details={'plant_name': plant_name}
+        )
+        logger.info(f"Planta eliminada: {plant_name} por {user.username}")
+        
+        instance.delete()
+
 
     @action(detail=True, methods=['get'])
     def estado(self, request, pk=None):
@@ -376,6 +421,97 @@ class PlantaViewSet(viewsets.ModelViewSet):
         datos['usando_config_indoor'] = temperatura is not None or humedad is not None
         
         return Response(datos)
+    
+    @action(detail=True, methods=['post'], url_path='imagenes')
+    def upload_image(self, request, pk=None):
+        """
+        Sube una imagen para una planta específica.
+        POST /api/plantas/{id}/imagenes/
+        Body: multipart/form-data con campo 'image'
+        """
+        planta = self.get_object()  # Verifica permisos automáticamente
+        
+        # Validar que se envió un archivo
+        if 'image' not in request.FILES:
+            return Response(
+                {'error': 'No se encontró el archivo. Use el campo "image".'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        imagen_file = request.FILES['image']
+        
+        try:
+            # Inicializar servicio de storage
+            storage_service = PlantImageStorageService()
+            
+            # Subir imagen a GCS
+            public_url, blob_name = storage_service.upload_image(imagen_file, planta.id)
+            
+            # Crear registro en base de datos
+            imagen_planta = ImagenPlanta.objects.create(
+                planta=planta,
+                imagen_url=public_url,
+                gcs_blob_name=blob_name
+            )
+            
+            serializer = ImagenPlantaSerializer(imagen_planta)
+            logger.info(f"Imagen subida exitosamente para planta {planta.nombre_personalizado}: {blob_name}")
+            
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+        except ValueError as e:
+            # Errores de validación (tipo, tamaño, formato)
+            logger.warning(f"Error de validación al subir imagen: {e}")
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            # Errores inesperados
+            logger.error(f"Error al subir imagen: {e}")
+            return Response(
+                {'error': 'Error al procesar la imagen. Intente nuevamente.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=True, methods=['delete'], url_path='imagenes/(?P<image_id>[^/.]+)')
+    def delete_image(self, request, pk=None, image_id=None):
+        """
+        Elimina una imagen específica de una planta.
+        DELETE /api/plantas/{id}/imagenes/{image_id}/
+        """
+        planta = self.get_object()  # Verifica permisos automáticamente
+        
+        try:
+            # Buscar la imagen que pertenece a esta planta
+            imagen = ImagenPlanta.objects.get(id=image_id, planta=planta)
+        except ImagenPlanta.DoesNotExist:
+            return Response(
+                {'error': 'Imagen no encontrada'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        try:
+            # Eliminar de GCS
+            storage_service = PlantImageStorageService()
+            storage_service.delete_image(imagen.gcs_blob_name)
+            
+            # Eliminar registro de base de datos
+            blob_name = imagen.gcs_blob_name
+            imagen.delete()
+            
+            logger.info(f"Imagen eliminada exitosamente: {blob_name}")
+            return Response(
+                {'message': 'Imagen eliminada correctamente'},
+                status=status.HTTP_204_NO_CONTENT
+            )
+            
+        except Exception as e:
+            logger.error(f"Error al eliminar imagen: {e}")
+            return Response(
+                {'error': 'Error al eliminar la imagen'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     @action(detail=True, methods=['get'])
     def recalcular(self, request, pk=None):
@@ -591,16 +727,18 @@ def delete_account(request):
     """
     user = request.user
     username = user.username  # Guardar antes de eliminar
+    user_email = user.email
     
     try:
-        print(f"[DELETE ACCOUNT] Iniciando eliminación de cuenta: {username}")
+        logger.info(f"Iniciando eliminación de cuenta: {username}")
         
         # 1. Verificar si tiene Google Calendar vinculado y borrar eventos
+        eventos_eliminados = 0
         try:
             profile = NotificationProfile.objects.get(user=user)
-            print(f"[DELETE ACCOUNT] Profile encontrado")
+            logger.debug(f"Perfil de notificaciones encontrado para {username}")
             if profile.google_access_token:
-                print(f"[DELETE ACCOUNT] Eliminando eventos de Google Calendar")
+                logger.info(f"Eliminando eventos de Google Calendar para {username}")
                 # Borrar todos los eventos de Google Calendar antes de eliminar
                 plantas_con_evento = Planta.objects.filter(
                     usuario=user, 
@@ -610,35 +748,49 @@ def delete_account(request):
                 for planta in plantas_con_evento:
                     try:
                         delete_calendar_event(user, planta.google_calendar_event_id)
-                        print(f"[DELETE ACCOUNT] Evento {planta.google_calendar_event_id} eliminado")
+                        eventos_eliminados += 1
+                        logger.debug(f"Evento {planta.google_calendar_event_id} eliminado")
                     except Exception as e:
                         # Si falla el borrado de un evento, continuamos
-                        print(f"[DELETE ACCOUNT] Error al borrar evento {planta.google_calendar_event_id}: {e}")
+                        logger.warning(f"Error al borrar evento {planta.google_calendar_event_id}: {e}")
         except NotificationProfile.DoesNotExist:
-            print(f"[DELETE ACCOUNT] No tiene perfil de notificaciones")
+            logger.debug(f"Usuario {username} no tiene perfil de notificaciones")
             pass
         
-        print(f"[DELETE ACCOUNT] Eliminando plantas...")
+        logger.info(f"Eliminando plantas del usuario {username}...")
         # 2. Eliminar plantas (los registros se eliminan en cascada por ForeignKey)
+        plantas_count = Planta.objects.filter(usuario=user).count()
         Planta.objects.filter(usuario=user).delete()
         
-        print(f"[DELETE ACCOUNT] Eliminando configuración...")
+        logger.info(f"Eliminando configuración del usuario {username}...")
         # 3. Eliminar configuración de usuario
         ConfiguracionUsuario.objects.filter(user=user).delete()
         
-        print(f"[DELETE ACCOUNT] Eliminando localidad outdoor...")
+        logger.info(f"Eliminando localidad outdoor del usuario {username}...")
         # 4. Eliminar localidad outdoor
         LocalidadUsuario.objects.filter(user=user).delete()
         
-        print(f"[DELETE ACCOUNT] Eliminando perfil de notificaciones...")
+        logger.info(f"Eliminando perfil de notificaciones del usuario {username}...")
         # 5. Eliminar perfil de notificaciones
         NotificationProfile.objects.filter(user=user).delete()
         
-        print(f"[DELETE ACCOUNT] Eliminando usuario...")
+        # Registrar auditoría ANTES de eliminar el usuario
+        AuditLog.log(
+            user, 
+            'DELETE_ACCOUNT', 
+            request, 
+            details={
+                'plantas_eliminadas': plantas_count,
+                'eventos_calendar_eliminados': eventos_eliminados,
+                'email': user_email
+            }
+        )
+        
+        logger.warning(f"Eliminando usuario: {username}")
         # 6. Finalmente, eliminar el usuario
         user.delete()
         
-        print(f"[DELETE ACCOUNT] Usuario {username} eliminado exitosamente")
+        logger.info(f"Usuario {username} eliminado exitosamente (plantas: {plantas_count}, eventos: {eventos_eliminados})")
         return Response({
             'message': f'Cuenta de {username} eliminada exitosamente'
         }, status=status.HTTP_200_OK)
@@ -646,7 +798,8 @@ def delete_account(request):
     except Exception as e:
         # Si algo falla, la transacción se revierte automáticamente
         error_detail = traceback.format_exc()
-        print(f"[DELETE ACCOUNT] ERROR: {error_detail}")
+        logger.error(f"Error al eliminar cuenta de {username}: {error_detail}")
         return Response({
             'detail': f'Error al eliminar cuenta: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

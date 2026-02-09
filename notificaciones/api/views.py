@@ -2,6 +2,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 import threading
+import logging
+
+# Logger para este módulo
+logger = logging.getLogger(__name__)
 
 
 from notificaciones.api.serializers import EventCreateSerializer
@@ -90,9 +94,9 @@ class UpdateCalendarTimeView(APIView):
             def run_recalculation(user):
                 try:
                     recalculate_all_future_events(user)
-                    print(f"Recálculo en segundo plano finalizado para {user.username}")
+                    logger.info(f"Recálculo de eventos finalizado para {user.username}")
                 except Exception as e:
-                    print(f"Error en recálculo en segundo plano: {e}")
+                    logger.error(f"Error en recálculo de eventos para {user.username}: {e}")
 
             thread = threading.Thread(target=run_recalculation, args=(request.user,))
             thread.daemon = True # El hilo muere si el proceso principal muere

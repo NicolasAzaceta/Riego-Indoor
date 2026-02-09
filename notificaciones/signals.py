@@ -1,12 +1,16 @@
 # filepath: c:\Users\LucaRodriguez\Desktop\Riego-Indoor\riego_indoor\notificaciones\signals.py
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
+import logging
 from plantas.models import Riego, Planta
 from .services.google_calendar import get_user_calendar_service, update_calendar_event_for_plant
 from django.contrib.auth.models import User
 from .models import Profile
 from django.conf import settings
 from datetime import timedelta, datetime, time
+
+# Logger para este módulo
+logger = logging.getLogger(__name__)
 
 @receiver(post_save, sender=User)
 def create_or_update_profile(sender, instance, created, **kwargs):
@@ -34,7 +38,7 @@ def _update_or_create_next_watering_event(planta):
         update_calendar_event_for_plant(planta)
         
     except Exception as e:
-        print(f"Error en señal de actualización de calendario para '{planta.nombre_personalizado}': {e}")
+        logger.warning(f"Error en señal de actualización de calendario para '{planta.nombre_personalizado}': {e}")
 
 @receiver(post_save, sender=Planta)
 def update_event_on_planta_save(sender, instance, created, **kwargs):
@@ -80,7 +84,7 @@ def delete_event_on_planta_delete(sender, instance, **kwargs):
     try:
         service = get_user_calendar_service(user)
         service.events().delete(calendarId='primary', eventId=planta.google_calendar_event_id).execute()
-        print(f"Evento '{planta.google_calendar_event_id}' eliminado del calendario para la planta '{planta.nombre_personalizado}' que fue borrada.")
+        logger.info(f"Evento '{planta.google_calendar_event_id}' eliminado del calendario para planta '{planta.nombre_personalizado}'")
     except Exception as e:
         # Si el evento ya no existe en Google Calendar, no es un error crítico.
-        print(f"No se pudo eliminar el evento '{planta.google_calendar_event_id}' del calendario (puede que ya haya sido borrado): {e}")
+        logger.warning(f"No se pudo eliminar evento '{planta.google_calendar_event_id}' del calendario: {e}")
