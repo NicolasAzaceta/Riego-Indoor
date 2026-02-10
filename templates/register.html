@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -13,13 +14,15 @@
   <link rel="icon" type="image/png" href="{% static 'assets/img/icono.png' %}">
   <link rel="manifest" href="{% static 'manifest.json' %}">
 </head>
+
 <body class="page-centered">
 
   <nav class="navbar">
     <div class="container-fluid">
       <a href="/">
         <div style="position: relative; height: 30px;">
-          <img src="{% static 'assets/img/RIEGUMICONO.png' %}" alt="Logo Riegum" style="position: absolute; top: 50%; transform: translateY(-50%); width: 150px; height: auto;">
+          <img src="{% static 'assets/img/RIEGUMICONO.png' %}" alt="Logo Riegum"
+            style="position: absolute; top: 50%; transform: translateY(-50%); width: 150px; height: auto;">
         </div>
       </a>
     </div>
@@ -39,14 +42,29 @@
             <label for="email" class="form-label">Email</label>
             <input type="email" class="form-control" id="email" required>
           </div>
-          <div class="mb-4">
+          <div class="mb-3">
             <label for="password" class="form-label">Contraseña</label>
-            <input type="password" class="form-control" id="password" required>
+            <div class="input-group">
+              <input type="password" class="form-control" id="password" required>
+              <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
+          </div>
+          <div class="mb-4">
+            <label for="confirmPassword" class="form-label">Confirmar Contraseña</label>
+            <div class="input-group">
+              <input type="password" class="form-control" id="confirmPassword" required>
+              <button class="btn btn-outline-secondary" type="button" id="toggleConfirmPassword">
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
           </div>
           <div class="form-check mb-4">
             <input class="form-check-input" type="checkbox" value="" id="termsCheckbox">
             <label class="form-check-label small" for="termsCheckbox">
-              He leído y acepto la <a href="/privacy/" target="_blank">Política de Privacidad</a> y los <a href="/terms/" target="_blank">Términos y Condiciones</a>.
+              He leído y acepto la <a href="/privacy/" target="_blank">Política de Privacidad</a> y los <a
+                href="/terms/" target="_blank">Términos y Condiciones</a>.
             </label>
           </div>
           <div class="d-grid">
@@ -62,14 +80,17 @@
     </div>
 
     <!-- Success Modal -->
-    <div class="modal fade" id="registerSuccessModal" tabindex="-1" aria-labelledby="registerSuccessModalLabel" aria-hidden="true">
+    <div class="modal fade" id="registerSuccessModal" tabindex="-1" aria-labelledby="registerSuccessModalLabel"
+      aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content bg-violeta text-white border-0 rounded">
           <h5 class="modal-title text-center pt-3" id="registerSuccessModalLabel">¡Registro Exitoso!</h5>
-          <div class="bg-light text-dark mt-3" style="border-bottom-left-radius: var(--bs-modal-border-radius); border-bottom-right-radius: var(--bs-modal-border-radius);">
+          <div class="bg-light text-dark mt-3"
+            style="border-bottom-left-radius: var(--bs-modal-border-radius); border-bottom-right-radius: var(--bs-modal-border-radius);">
             <div class="modal-body text-center">
               <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
-              <p class="mt-3 text-success">Tu cuenta ha sido creada con éxito. Serás redirigido a la página de inicio de sesión.</p>
+              <p class="mt-3 text-success">Tu cuenta ha sido creada con éxito. Serás redirigido a la página de inicio de
+                sesión.</p>
             </div>
             <div class="modal-footer justify-content-center border-0">
               <button type="button" class="btn btn-violeta-outline" id="btnAcceptSuccessRegister">Aceptar</button>
@@ -80,11 +101,13 @@
     </div>
 
     <!-- Error Modal -->
-    <div class="modal fade" id="registerErrorModal" tabindex="-1" aria-labelledby="registerErrorModalLabel" aria-hidden="true">
+    <div class="modal fade" id="registerErrorModal" tabindex="-1" aria-labelledby="registerErrorModalLabel"
+      aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content bg-violeta text-white border-0 rounded">
           <h5 class="modal-title text-center pt-3" id="registerErrorModalLabel">Error de Registro</h5>
-          <div class="bg-light text-dark mt-3" style="border-bottom-left-radius: var(--bs-modal-border-radius); border-bottom-right-radius: var(--bs-modal-border-radius);">
+          <div class="bg-light text-dark mt-3"
+            style="border-bottom-left-radius: var(--bs-modal-border-radius); border-bottom-right-radius: var(--bs-modal-border-radius);">
             <div class="modal-body text-center">
               <i class="bi bi-x-circle-fill text-danger" style="font-size: 3rem;"></i>
               <p class="mt-3 text-danger" id="registerErrorMessage"></p>
@@ -112,4 +135,5 @@
   </script>
 
 </body>
+
 </html>

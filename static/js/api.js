@@ -211,8 +211,8 @@ async function cargarDatosClimaDropdown() {
         indoorContainer.innerHTML = desktopHtml;
         if (indoorContainerMobile) indoorContainerMobile.innerHTML = mobileHtml;
       } else {
-        const noConfigDesktop = '<small class="text-muted">No configurado. <a href="#" onclick="document.getElementById(\'sidebar-toggle\').click(); return false;">Configurar</a></small>';
-        const noConfigMobile = '<small class="text-white-50">No configurado. <a href="#" class="text-info" onclick="document.getElementById(\'sidebar-toggle\').click(); return false;">Configurar</a></small>';
+        const noConfigDesktop = '<small class="text-muted">No configurado</small>';
+        const noConfigMobile = '<small class="text-white-50">No configurado</small>';
 
         indoorContainer.innerHTML = noConfigDesktop;
         if (indoorContainerMobile) indoorContainerMobile.innerHTML = noConfigMobile;

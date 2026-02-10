@@ -77,7 +77,7 @@ function renderizarDetalle(planta) {
           <button class="btn btn-danger btn-sm position-absolute" 
                   onclick="event.stopPropagation(); eliminarImagen(${imagen.id});" 
                   title="Eliminar imagen"
-                  style="top: 15px; right: 15px; z-index: 99999 !important;">
+                  style="top: 10px; right: 10px; z-index: 9999;">
             <i class="bi bi-trash"></i>
           </button>
           <div class="position-absolute bottom-0 start-0 w-100 text-center" style="background: linear-gradient(transparent, rgba(0,0,0,0.7)); padding: 8px 0;">
