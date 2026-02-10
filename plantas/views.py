@@ -496,15 +496,12 @@ class PlantaViewSet(viewsets.ModelViewSet):
             )
         
         try:
-            # Eliminar de GCS
-            storage_service = PlantImageStorageService()
-            storage_service.delete_image(imagen.gcs_blob_name)
-            
             # Eliminar registro de base de datos
+            # IMPORTANTE: Esto dispara la signal post_delete que elimina la imagen de GCS
             blob_name = imagen.gcs_blob_name
             imagen.delete()
             
-            logger.info(f"Imagen eliminada exitosamente: {blob_name}")
+            logger.info(f"Imagen eliminada exitosamente (BD y GCS vía signal): {blob_name}")
             return Response(
                 {'message': 'Imagen eliminada correctamente'},
                 status=status.HTTP_204_NO_CONTENT

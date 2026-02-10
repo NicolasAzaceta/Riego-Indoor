@@ -20,9 +20,20 @@ def delete_image_from_gcs(sender, instance, **kwargs):
     
     Esto también se activa cuando se elimina la Planta (CASCADE).
     """
+    if not instance.gcs_blob_name:
+        return
+
     try:
         storage_service = PlantImageStorageService()
+        
+        # Intentar eliminar. Si no existe, delete_image podría lanzar excepción
+        # o devolver False dependiendo de la implementación.
+        # Aquí asumimos que storage_service.delete_image maneja la lógica.
         storage_service.delete_image(instance.gcs_blob_name)
-        logger.info(f"Imagen {instance.gcs_blob_name} eliminada de GCS por signal")
+        
     except Exception as e:
-        logger.error(f"Error al eliminar imagen {instance.gcs_blob_name} de GCS en signal: {e}")
+        # Si es un error de "no encontrado", es benigno (ya se borró o nunca existió)
+        if "Not Found" in str(e) or "404" in str(e):
+            logger.info(f"Imagen {instance.gcs_blob_name} no encontrada en GCS (probablemente ya eliminada)")
+        else:
+            logger.error(f"Error al eliminar imagen {instance.gcs_blob_name} de GCS en signal: {e}")
