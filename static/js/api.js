@@ -42,18 +42,10 @@ export async function eliminarCuenta() {
 
 export function iniciarVinculacionGoogle() {
   // Simplemente redirigimos al usuario a la vista de inicio de autenticación del backend.
-  // El backend se encargará de todo el flujo de OAuth.
-  // Para que esto funcione, necesitamos una forma de pasar el token JWT en la URL.
-  const token = localStorage.getItem("access");
+  // El backend se encargará de todo el flujo de OAuth usando la cookie de sesión (httpOnly).
 
-  if (!token) {
-    alert("No se encontró el token de autenticación. Por favor, inicie sesión de nuevo.");
-    // Opcionalmente, podrías redirigir al login:
-    // window.location.href = "/home/"; 
-    return;
-  }
-
-  window.location.href = `/google-calendar/auth/?jwt=${token}`;
+  // Ya no necesitamos pasar el token en la URL gracias a la mejora en el backend.
+  window.location.href = `/google-calendar/auth/`;
 }
 
 export async function checkGoogleCalendarStatus() {
