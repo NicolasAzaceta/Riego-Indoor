@@ -49,7 +49,21 @@
         <label for="nombre" class="form-label">Nombre<span style="color: red"> *</span></label>
         <input type="text" class="form-control" id="nombre" required />
       </div>
+
+      <!-- Categoría botánica -->
       <div class="mb-3">
+        <label for="categoria_botanica" class="form-label">Categoría botánica<span style="color: red"> *</span></label>
+        <select class="form-select" id="categoria_botanica" required>
+          <option value="Cannabis" selected>🌿 Cannabis</option>
+          <option value="Otras">🌵 Otras</option>
+        </select>
+        <small class="form-text text-white">
+          Cannabis: cálculo automático de riego | Otras: ingresá los valores manualmente
+        </small>
+      </div>
+
+      <!-- Tipo planta (solo Cannabis) -->
+      <div class="mb-3" id="container-tipo-planta">
         <label for="tipo" class="form-label">Tipo<span style="color: red"> *</span></label>
         <select class="form-select" id="tipo" type="text" required>
           <option value="">Seleccionar</option>
@@ -57,6 +71,21 @@
           <option value="Foto">Fotoperiódica</option>
         </select>
       </div>
+
+      <!-- Campos manuales (solo Otras) -->
+      <div id="container-campos-manuales" style="display: none;">
+        <div class="mb-3">
+          <label for="frecuencia_riego_manual" class="form-label">Frecuencia de riego (días)<span style="color: red"> *</span></label>
+          <input type="number" class="form-control" id="frecuencia_riego_manual" placeholder="Ej: 5" step="1" min="1" max="30" />
+          <small class="form-text text-white">¿Cada cuántos días querés regar esta planta?</small>
+        </div>
+        <div class="mb-3">
+          <label for="cantidad_agua_manual" class="form-label">Cantidad de agua (ml)<span style="color: red"> *</span></label>
+          <input type="number" class="form-control" id="cantidad_agua_manual" placeholder="Ej: 500" step="10" min="10" max="10000" />
+          <small class="form-text text-white">¿Cuántos mililitros de agua por riego?</small>
+        </div>
+      </div>
+
       <div class="mb-3">
         <label for="tamano" class="form-label">Tamaño de la planta<span style="color: red"> *</span></label>
         <select class="form-select" id="tamano" type="text" required>

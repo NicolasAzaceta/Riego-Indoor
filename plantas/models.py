@@ -192,10 +192,20 @@ class Planta(models.Model):
         ('indoor', 'Indoor'),
         ('outdoor', 'Outdoor'),
     ]
+    CATEGORIA_BOTANICA_CHOICES = [
+        ('Cannabis', 'Cannabis'),
+        ('Otras', 'Otras'),
+    ]
 
     usuario = models.ForeignKey(User, on_delete=models.CASCADE)
     nombre_personalizado = models.CharField(max_length=100)
-    tipo_planta = models.CharField(max_length=10, choices=TIPO_PLANTA_CHOICES)
+    categoria_botanica = models.CharField(
+        max_length=10,
+        choices=CATEGORIA_BOTANICA_CHOICES,
+        default='Cannabis',
+        help_text="Categoría botánica: Cannabis (cálculo automático) u Otras (valores manuales)"
+    )
+    tipo_planta = models.CharField(max_length=10, choices=TIPO_PLANTA_CHOICES, blank=True, null=True)
     tamano_planta = models.CharField(max_length=10, choices=TAMANO_CHOICES)
     tipo_cultivo = models.CharField(
         max_length=10, 
@@ -207,13 +217,62 @@ class Planta(models.Model):
     fecha_ultimo_riego = models.DateField()
     en_floracion = models.BooleanField(default=False)
     google_calendar_event_id = models.CharField(max_length=255, blank=True, null=True, help_text="ID del evento de Google Calendar para el próximo riego")
+    
+    # Campos manuales para categoría "Otras"
+    frecuencia_riego_manual = models.IntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(30)],
+        help_text="Frecuencia de riego en días (solo para categoría 'Otras'). Rango: 1-30 días"
+    )
+    cantidad_agua_manual_ml = models.IntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(10), MaxValueValidator(10000)],
+        help_text="Cantidad de agua en ml (solo para categoría 'Otras'). Rango: 10-10000 ml"
+    )
 
     # ---------- LÓGICA DE CÁLCULO ----------
     def calculos_riego(self, temperatura_externa=None, humedad_externa=None):
         """
         Calcula días restantes, cantidad de agua, y estado de riego.
-        Ajusta según temperatura y humedad externas (si se proporcionan).
+        Para categoría 'Otras', usa los valores manuales ingresados por el usuario.
+        Para 'Cannabis', ajusta según temperatura y humedad externas (si se proporcionan).
         """
+        today = date.today()
+
+        # ===== Plantas categoría "Otras": usar valores manuales =====
+        if self.categoria_botanica == 'Otras':
+            frequency_days = self.frecuencia_riego_manual or 3
+            recommended_water_ml = self.cantidad_agua_manual_ml or 500
+
+            next_watering_date = self.fecha_ultimo_riego + timedelta(days=frequency_days)
+            days_left = (next_watering_date - today).days
+
+            if days_left > 1:
+                estado_riego = 'no_necesita'
+                estado_texto = 'No necesita agua'
+            elif days_left == 1:
+                estado_riego = 'pronto'
+                estado_texto = 'Pronto a regar'
+            elif days_left == 0:
+                estado_riego = 'hoy'
+                estado_texto = 'Necesita riego hoy'
+            else:
+                estado_riego = 'urgente'
+                estado_texto = f'Riego urgente (atrasado {abs(days_left)} día{"s" if abs(days_left) > 1 else ""})'
+
+            return {
+                "recommended_water_ml": recommended_water_ml,
+                "frequency_days": frequency_days,
+                "next_watering_date": next_watering_date,
+                "days_left": days_left,
+                "estado_riego": estado_riego,
+                "estado_texto": estado_texto,
+                "sugerencia_suplementos": "Consultá las recomendaciones específicas del fabricante del sustrato o fertilizante que utilices.",
+            }
+
+        # ===== Plantas Cannabis: cálculo automático =====
         litros = max(self.tamano_maceta_litros, 0.1)  # Mínimo 0.1L
         size = self.tamano_planta
         en_flor = self.en_floracion

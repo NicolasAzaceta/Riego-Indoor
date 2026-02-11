@@ -24,7 +24,33 @@ function renderizarDetalle(planta) {
   // --- Ficha de la Planta ---
   document.getElementById('plant-title').textContent = planta.nombre_personalizado;
   document.getElementById('nombre').textContent = planta.nombre_personalizado;
-  document.getElementById('tipo').textContent = planta.tipo_planta;
+
+  // Categoría botánica
+  const esCannabis = planta.categoria_botanica === 'Cannabis';
+  document.getElementById('categoriaBotanica').textContent = esCannabis ? '🌿 Cannabis' : '🌵 Otras';
+
+  // Tipo planta: solo mostrar para Cannabis
+  const containerTipo = document.getElementById('container-tipo-detail');
+  if (esCannabis) {
+    containerTipo.style.display = '';
+    document.getElementById('tipo').textContent = planta.tipo_planta || 'N/A';
+  } else {
+    containerTipo.style.display = 'none';
+  }
+
+  // Campos manuales: solo mostrar para Otras
+  const containerManuales = document.getElementById('container-manuales-detail');
+  if (!esCannabis) {
+    containerManuales.style.display = '';
+    document.getElementById('frecuenciaManual').textContent = planta.frecuencia_riego_manual ? `Cada ${planta.frecuencia_riego_manual} días` : 'N/A';
+    document.getElementById('cantidadManual').textContent = planta.cantidad_agua_manual_ml ? `${planta.cantidad_agua_manual_ml} ml` : 'N/A';
+    // Rellenar inputs de edición
+    document.getElementById('input-frecuenciaManual').value = planta.frecuencia_riego_manual || '';
+    document.getElementById('input-cantidadManual').value = planta.cantidad_agua_manual_ml || '';
+  } else {
+    containerManuales.style.display = 'none';
+  }
+
   document.getElementById('tamano').textContent = planta.tamano_planta;
   document.getElementById('maceta').textContent = `${planta.tamano_maceta_litros} litros`;
   document.getElementById('ultimoRiego').textContent = planta.fecha_ultimo_riego ? new Date(planta.fecha_ultimo_riego).toLocaleDateString('es-AR', { timeZone: 'UTC' }) : 'N/A';
@@ -108,6 +134,14 @@ function toggleEditMode(enable) {
     { id: 'enFloracion', input: 'input-enFloracion' },
   ];
 
+  // Campos manuales: solo editables si la planta es "Otras"
+  if (currentPlantData && currentPlantData.categoria_botanica !== 'Cannabis') {
+    fields.push(
+      { id: 'frecuenciaManual', input: 'input-frecuenciaManual', inputGroup: 'input-group-frecuencia' },
+      { id: 'cantidadManual', input: 'input-cantidadManual', inputGroup: 'input-group-cantidad' },
+    );
+  }
+
   fields.forEach(field => {
     const span = document.getElementById(field.id);
     const input = document.getElementById(field.input);
@@ -142,13 +176,19 @@ async function guardarFicha() {
   // 1. Tomamos como base la data actual de la planta para asegurar que todos los campos estén.
   // 2. Sobrescribimos con los nuevos valores de los inputs.
   const payload = {
-    ...currentPlantData, // Base con todos los campos (incluyendo tipo_planta)
+    ...currentPlantData, // Base con todos los campos
     nombre_personalizado: document.getElementById('input-nombre').value,
     tamano_planta: document.getElementById('input-tamano').value,
     tamano_maceta_litros: parseFloat(document.getElementById('input-maceta').value),
     fecha_ultimo_riego: document.getElementById('input-ultimoRiego').value,
     en_floracion: document.getElementById('input-enFloracion').value === 'Si',
   };
+
+  // Para categoría "Otras", incluir campos manuales editados
+  if (currentPlantData.categoria_botanica !== 'Cannabis') {
+    payload.frecuencia_riego_manual = parseInt(document.getElementById('input-frecuenciaManual').value) || null;
+    payload.cantidad_agua_manual_ml = parseInt(document.getElementById('input-cantidadManual').value) || null;
+  }
 
   try {
     const putResponse = await fetchProtegido(`/api/plantas/${plantId}/`, {
@@ -188,6 +228,11 @@ function cancelarEdicion() {
     document.getElementById('input-maceta').value = currentPlantData.tamano_maceta_litros;
     document.getElementById('input-ultimoRiego').value = currentPlantData.fecha_ultimo_riego;
     document.getElementById('input-enFloracion').value = currentPlantData.en_floracion ? 'Si' : 'No';
+    // Restaurar campos manuales si aplica
+    if (currentPlantData.categoria_botanica !== 'Cannabis') {
+      document.getElementById('input-frecuenciaManual').value = currentPlantData.frecuencia_riego_manual || '';
+      document.getElementById('input-cantidadManual').value = currentPlantData.cantidad_agua_manual_ml || '';
+    }
   }
   toggleEditMode(false);
 }

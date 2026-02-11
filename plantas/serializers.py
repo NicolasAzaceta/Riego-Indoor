@@ -140,9 +140,12 @@ class PlantaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Planta
         fields = (
-            "id", "usuario", "nombre_personalizado", "tipo_planta",
-            "tamano_planta", "tipo_cultivo", "tamano_maceta_litros", "fecha_ultimo_riego",
+            "id", "usuario", "nombre_personalizado", "categoria_botanica",
+            "tipo_planta", "tamano_planta", "tipo_cultivo",
+            "tamano_maceta_litros", "fecha_ultimo_riego",
             "en_floracion",
+            # Campos manuales para categoría "Otras"
+            "frecuencia_riego_manual", "cantidad_agua_manual_ml",
             # calculados
             "recommended_water_ml", "frequency_days", "next_watering_date",
             "days_left", "estado_riego", "estado_texto", "sugerencia_suplementos",
@@ -150,6 +153,42 @@ class PlantaSerializer(serializers.ModelSerializer):
             "imagenes",
         )
         read_only_fields = ("usuario",)
+
+    def validate(self, attrs):
+        """
+        Validación condicional según categoría botánica:
+        - Cannabis: tipo_planta es obligatorio
+        - Otras: frecuencia_riego_manual y cantidad_agua_manual_ml son obligatorios
+        """
+        # En updates parciales, mergear con datos existentes
+        categoria = attrs.get('categoria_botanica', getattr(self.instance, 'categoria_botanica', 'Cannabis') if self.instance else 'Cannabis')
+
+        if categoria == 'Cannabis':
+            tipo_planta = attrs.get('tipo_planta', getattr(self.instance, 'tipo_planta', None) if self.instance else None)
+            if not tipo_planta:
+                raise serializers.ValidationError({
+                    "tipo_planta": "El tipo de planta es obligatorio para Cannabis."
+                })
+            # Limpiar campos manuales si se selecciona Cannabis
+            attrs['frecuencia_riego_manual'] = None
+            attrs['cantidad_agua_manual_ml'] = None
+
+        elif categoria == 'Otras':
+            frecuencia = attrs.get('frecuencia_riego_manual', getattr(self.instance, 'frecuencia_riego_manual', None) if self.instance else None)
+            cantidad = attrs.get('cantidad_agua_manual_ml', getattr(self.instance, 'cantidad_agua_manual_ml', None) if self.instance else None)
+
+            if frecuencia is None:
+                raise serializers.ValidationError({
+                    "frecuencia_riego_manual": "La frecuencia de riego es obligatoria para plantas no-cannabis."
+                })
+            if cantidad is None:
+                raise serializers.ValidationError({
+                    "cantidad_agua_manual_ml": "La cantidad de agua es obligatoria para plantas no-cannabis."
+                })
+            # Limpiar tipo_planta ya que no aplica
+            attrs['tipo_planta'] = None
+
+        return attrs
 
     def get_calc(self, obj):
         return obj.calculos_riego()
