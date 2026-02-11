@@ -166,10 +166,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         ? '<span class="badge bg-primary me-2" title="Riego automático según clima" style="font-size: 0.75rem;">🌤️ Outdoor</span>'
         : '<span class="badge bg-secondary me-2" title="Ambiente controlado" style="font-size: 0.75rem;">🏠 Indoor</span>';
 
+      // Badge de categoría botánica
+      const categoriaBotanica = planta.categoria_botanica || 'Cannabis';
+      const badgeCategoria = categoriaBotanica === 'Cannabis'
+        ? '<span class="badge bg-success" title="Cannabis" style="font-size: 0.75rem;">🌿 Cannabis</span>'
+        : '<span class="badge bg-info text-dark" title="Otras" style="font-size: 0.75rem;">🌵 Otras</span>';
+
       tarjeta.innerHTML = `
-      <!-- Badge de tipo de cultivo en esquina superior izquierda -->
+      <!-- Badges en esquina superior izquierda -->
       <div class="position-absolute" style="top: 14px; left: 16px; z-index: 10;">
-        ${badgeCultivo}
+        ${badgeCultivo}${badgeCategoria}
       </div>
       
       <div class="card-body text-center flex-grow-1 d-flex flex-column align-items-center justify-content-center">
